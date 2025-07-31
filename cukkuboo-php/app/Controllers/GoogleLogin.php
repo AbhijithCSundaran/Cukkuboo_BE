@@ -67,10 +67,19 @@ class GoogleLogin extends BaseController
     $jwt = new Jwt();
     $isNew = false;
     $existingUsers = $this->loginModel->where('email', $email)->orderBy('user_id', 'DESC')->findAll();
-
+    foreach ($existingUsers as $existingUser) {
+        if ($existingUser['status'] == 2) {
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'Your account has been suspended by the admin.',
+                'data'    => []
+            ]);
+        }
+    }
     $activeUser = null;
     $deletedUser = null;
-
+    $blockedUser = null;
+    
     foreach ($existingUsers as $existingUser) {
         if ($activeUser === null && $existingUser['status'] == 1) {
             $activeUser = $existingUser;
@@ -79,18 +88,30 @@ class GoogleLogin extends BaseController
         if ($deletedUser === null && $existingUser['status'] == 9) {
             $deletedUser = $existingUser;
         }
-    }
 
-    if ($activeUser) {
-    if ($activeUser['auth_type'] === 'manual') {
+        if ($blockedUser === null && $existingUser['status'] == 2) {
+            $blockedUser = $existingUser;
+        }
+    }
+    if ($blockedUser) {
         return $this->response->setJSON([
             'success' => false,
-            'message' => 'This account is registered with manual login. Please use email and password.',
+            'message' => 'Your account has been suspended by the admin.',
             'data'    => []
         ]);
     }
-    $token = $jwt->encode(['user_id' => $activeUser['user_id']]);
-    $updateData = [
+
+    if ($activeUser) {
+        if ($activeUser['auth_type'] === 'manual') {
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'This account is registered with manual login. Please use email and password.',
+                'data'    => []
+            ]);
+        }
+
+        $token = $jwt->encode(['user_id' => $activeUser['user_id']]);
+        $updateData = [
             'jwt_token'  => $token,
             'last_login' => $now,
             'updated_at' => $now
@@ -101,7 +122,6 @@ class GoogleLogin extends BaseController
 
         $this->loginModel->update($activeUser['user_id'], $updateData);
         $user = $this->loginModel->find($activeUser['user_id']);
-
 
     } elseif ($deletedUser) {
         $existingNewUser = $this->loginModel
@@ -154,6 +174,14 @@ class GoogleLogin extends BaseController
             $isNew = true;
         }
     } else {
+        if ($blockedUser) {
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'Your account has been suspended by the admin.',
+                'data'    => []
+            ]);
+        }
+
         $username = isset($googleUser['name']) ? $googleUser['name'] : explode('@', $email)[0];
         $newUserData = [
             'email'          => $email,
@@ -189,6 +217,7 @@ class GoogleLogin extends BaseController
         $user = $this->loginModel->find($userId);
         $isNew = true;
     }
+
     $subscription = $this->usersubModel
         ->select('user_subscription.*, subscriptionplan.plan_name')
         ->join('subscriptionplan', 'subscriptionplan.subscriptionplan_id = user_subscription.subscriptionplan_id')
@@ -211,6 +240,7 @@ class GoogleLogin extends BaseController
         'end_date' => null,
         'subscription' => 0
     ];
+
     $unreadCount = $this->notificationModel
         ->where('user_id', $user['user_id'])
         ->where('status', 1)

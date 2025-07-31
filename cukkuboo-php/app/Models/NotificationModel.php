@@ -117,5 +117,20 @@ public function hasUnreadNotifications($userId)
                 ->where('status', 1) // 1 = unread
                 ->countAllResults() > 0;
 }
+public function create($data) {
+    $this->db->insert('notification', $data);
+    return $this->db->insert_id();
+}
+
+public function assignToUserNotificationTable($userId, $notificationId) {
+    $this->db->insert('user_notifications', [
+        'user_id' => $userId,
+        'notification_id' => $notificationId,
+        'is_read' => 0,
+        'is_deleted' => 0,
+        'created_at' => date('Y-m-d H:i:s')
+    ]);
+}
+
 
 }
