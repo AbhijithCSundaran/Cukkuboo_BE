@@ -188,10 +188,21 @@ class User extends ResourceController
     }
 
     if ($authenticatedUser) {
-        $userData['updated_at'] = date('Y-m-d H:i:s');
-        $userData['updated_by'] = $authenticatedUser['user_id'];
+    $existingUser = $this->UserModel->find($user_id);
 
-        $this->UserModel->updateUser($user_id, $userData);
+    if ($existingUser) {
+        $updateData = $userData; 
+
+        if ($existingUser['auth_type'] === 'google') {
+            
+            $allowedFields = ['username', 'phone'];
+            $updateData = array_intersect_key($userData, array_flip($allowedFields));
+        }
+
+        $updateData['updated_at'] = date('Y-m-d H:i:s');
+        $updateData['updated_by'] = $authenticatedUser['user_id'];
+
+        $this->UserModel->updateUser($user_id, $updateData);
         $user = $this->UserModel->find($user_id);
 
         $responseData = [
@@ -217,12 +228,7 @@ class User extends ResourceController
             'data'    => $responseData
         ]);
     }
-
-    return $this->response->setStatusCode(401)->setJSON([
-        'success' => false,
-        'message' => 'Unauthorised User',
-        'data'    => null
-    ]);
+}
 }
     //  Get user details
     // public function getUserDetails()

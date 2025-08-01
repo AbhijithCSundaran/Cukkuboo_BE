@@ -121,6 +121,9 @@ class GoogleLogin extends BaseController
         if (!empty($data['country']))  $updateData['country'] = $data['country'];
 
         $this->loginModel->update($activeUser['user_id'], $updateData);
+        if (isset($activeUser['auth_type']) && $activeUser['auth_type'] === 'google') {
+            $this->loginModel->update($activeUser['user_id'], ['auth_type' => 'google']);
+        }
         $user = $this->loginModel->find($activeUser['user_id']);
 
     } elseif ($deletedUser) {
