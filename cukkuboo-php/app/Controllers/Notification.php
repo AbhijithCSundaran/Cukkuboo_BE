@@ -6,6 +6,7 @@ use App\Helpers\AuthHelper;
 use App\Models\NotificationModel;
 use App\Models\UserModel;
 use App\Libraries\AuthService;
+// use App\Libraries\NotificationService;
 
 class Notification extends ResourceController
 {
@@ -19,6 +20,7 @@ class Notification extends ResourceController
         $this->notificationModel = new NotificationModel();
         $this->UserModel = new UserModel();
         $this->authService = new AuthService();
+        // $this->notificationService = new NotificationService();
     }
 
     public function createOrUpdate()
@@ -32,6 +34,7 @@ class Notification extends ResourceController
 
     $notificationModel = new NotificationModel();
     $userModel = new UserModel(); 
+    // $notificationService = new NotificationService();
 
     $data = $this->request->getJSON(true);
     $notificationId = $data['notification_id'] ?? null;
@@ -75,7 +78,11 @@ class Notification extends ResourceController
         $insertedId = $notificationModel->insert($notificationData);
         $notificationData['notification_id'] = $insertedId;
         $notificationData['name'] = $user['username'] ?? '';
-
+        
+        //automatic notification
+        // if (!empty($data['event_type'])) {
+        //     $notificationService->sendAutoNotification($user['user_id'], $data['event_type']);
+        // }
         return $this->respond([
             'success' => true,
             'message' => 'Notification created',
