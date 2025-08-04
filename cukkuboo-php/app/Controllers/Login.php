@@ -117,7 +117,12 @@ class Login extends BaseController
 
     foreach ($expired as $sub) {
         $usersubModel->update($sub['user_subscription_id'], ['status' => 2]);
-        $this->UserModel->update($userId, ['subscription' => 'Expired']);
+        $this->UserModel->update($user['user_id'], ['subscription' => 'Expired']);
+        $autoNotification = new AutoNotification();
+        $autoNotification->sendAutoNotification($user['user_id'], 'subscription_expired', [
+        'plan_name' => $sub['plan_name'] ?? 'Your plan',
+        'end_date'  => $sub['end_date']
+    ]);
     }
     $subscription = $usersubModel
         ->select('user_subscription.*, subscriptionplan.plan_name') 
@@ -163,6 +168,7 @@ class Login extends BaseController
     // Login Type 1: No fcm_token → just return existing token, no update
     if (empty($data['fcm_token'])) {
     $this->loginModel->update($user['user_id'], $updateData);
+    
         return $this->response->setJSON([
             'success' => true,
             'message' => 'Login successful',
@@ -189,8 +195,8 @@ class Login extends BaseController
     // Login Type 2: Email + Password + fcm_token → update token and fcm_token
 
     $updateData['fcm_token'] = $data['fcm_token'];
-    
     $this->loginModel->update($user['user_id'], $updateData);
+    
     return $this->response->setJSON([
         'success' => true,
         'message' => 'Login successful',
@@ -231,7 +237,8 @@ class Login extends BaseController
     }
 
     $this->loginModel->update($user['user_id'], ['jwt_token' => null]);
-
+    $autoNotification = new AutoNotification();
+    $autoNotification->sendAutoNotification($user['user_id'], 'account_logout');
     return $this->response->setJSON([
         'success' => true,
         'message' => 'Logout successful. Token removed.',

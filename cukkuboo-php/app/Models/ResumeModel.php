@@ -40,7 +40,8 @@ class ResumeModel extends Model
     $builder = $this->builder()
         ->select('resume_history.*, movies_details.title')
         ->join('movies_details', 'movies_details.mov_id = resume_history.mov_id', 'left')
-        ->where('resume_history.status !=', 9);  
+        ->where('resume_history.status !=', 9) 
+        ->where('movies_details.status', 1);  
 
     if (!empty($search)) {
         $builder->like('movies_details.title', $search);
@@ -56,6 +57,7 @@ public function getHistoryById($historyId)
         ->join('movies_details', 'movies_details.mov_id = resume_history.mov_id', 'left')
         ->where('resume_history.resume_id', $historyId)
         ->where('resume_history.status !=', 9)
+        ->where('movies_details.status', 1) 
         ->get()
         ->getRow();  
 }
@@ -64,7 +66,8 @@ public function getCompletedHistory($userId)
         return $this->select('resume_history.*, movies_details.title, movies_details.thumbnail') 
                     ->join('movies_details', 'movies_details.mov_id = resume_history.mov_id', 'left') 
                     ->where('resume_history.user_id', $userId)
-                    ->where('resume_history.status !=', 9) 
+                    ->where('resume_history.status !=', 9)
+                    ->where('movies_details.status', 1)  
                     ->orderBy('resume_history.created_on', 'DESC')
                     ->findAll();
     }

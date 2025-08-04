@@ -65,7 +65,12 @@ class Profile extends BaseController
 				'message' => 'User not found.'
 			]);
 		}
-		
+		if (isset($user['auth_type']) && strtolower($user['auth_type']) === 'google') {
+			return $this->response->setJSON([
+				'success' => false,
+				'message' => 'This email is registered via Google Sign-In. Please use the "Continue with Google" option to sign in.'
+			]);
+		}
 		if($email && $newPassword && $confirmPassword && $otpInput) {
 			
 			if (strpos($user['password'], '_') === false) {

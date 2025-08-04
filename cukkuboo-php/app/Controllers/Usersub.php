@@ -9,6 +9,7 @@ use CodeIgniter\RESTful\ResourceController;
 use App\Helpers\AuthHelper; 
 use App\Libraries\Jwt;
 use App\Libraries\AuthService;
+use App\Models\NotificationModel;
 class Usersub extends ResourceController
 {
     protected $usersubModel;
@@ -22,6 +23,7 @@ class Usersub extends ResourceController
         $this->usersubModel = new UsersubModel();
         $this->subscriptionPlanModel = new SubscriptionPlanModel();
         $this->userModel = new UserModel();
+        $this->notificationModel = new NotificationModel();
     }
 
  public function createSubscribe()
@@ -136,7 +138,11 @@ class Usersub extends ResourceController
     $this->userModel->update($userId, ['subscription' => 'Premium']);
     $payload['start_date'] = date('d F Y', strtotime($payload['start_date']));
     $payload['end_date']   = date('d F Y', strtotime($payload['end_date']));
-
+    $autoNotification = new AutoNotification();
+    $autoNotification->sendAutoNotification($userId, 'subscription_started', [
+        'plan_name' => $planName,
+        'end_date'  => $payload['end_date']
+    ]);
     return $this->respond([
         'success' => true,
         'message' => $msg,
@@ -271,17 +277,19 @@ public function getUserSubscriptions()
 
     $subscriptions = $builder->orderBy('user_subscription.user_subscription_id', 'DESC')
                              ->findAll($pageSize, $offset);
+    $autoNotification = new AutoNotification();
     foreach ($subscriptions as &$sub) {
     if ($sub['status'] == 1 && $sub['end_date'] < date('Y-m-d')) {
         $this->usersubModel->update($sub['user_subscription_id'], ['status' => 2]);
         $sub['status'] = 2;
+    $autoNotification->sendAutoNotification($sub['user_id'], 'subscription_expired', [
+            'plan_name' => $sub['plan_name'] ?? 'Your plan',
+            'end_date'  => $sub['end_date']
+        ]);
     }
-
     $sub['plan_type'] = ($sub['status'] == 1) ? 'Premium' : (($sub['status'] == 2) ? 'Expired' : (($sub['status'] == 3) ? 'Cancelled' : 'Unknown'));
 
 }
-
-
     return $this->response->setJSON([
         'success' => true,
         'message' => 'Subscription list fetched successfully.',

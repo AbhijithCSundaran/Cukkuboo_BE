@@ -15,7 +15,7 @@ class NotificationModel extends Model
     protected $allowedFields = [
         'user_id',
         'title',
-        'message',
+        'content',
         'type',         
         'target', 
         'status',
