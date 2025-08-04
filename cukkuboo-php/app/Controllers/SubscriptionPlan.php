@@ -33,7 +33,7 @@ class SubscriptionPlan extends ResourceController
         return $this->failUnauthorized('Invalid or missing token.');
     }
  
-    if (!isset($data['plan_name'], $data['price'], $data['discount_price'], $data['period'])) {
+    if (!isset($data['plan_name'], $data['price'], $data['discount_price'], $data['period'], $data['stripe_price_id'])) {
         return $this->failValidationErrors('Plan name, price, discount_price, and period are required.');
     }
  
@@ -45,6 +45,7 @@ class SubscriptionPlan extends ResourceController
     $data['period'] = (int)$data['period'];
     $data['features'] = $data['features'] ?? null;
     $data['status'] = $data['status'] ?? 1;
+    $data['stripe_price_id'] = $data['stripe_price_id'] ?? null;
     $data['modify_on'] = date('Y-m-d H:i:s');
     $data['modify_by'] = $user['user_id'];
  

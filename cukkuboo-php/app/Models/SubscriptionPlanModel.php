@@ -9,7 +9,7 @@ class SubscriptionPlanModel extends Model
 
     protected $allowedFields = [
         'plan_name', 'price', 'period', 'discount_price',
-        'features', 'status','modify_by','modify_on', 'created_on', 'created_by'
+        'features', 'status','stripe_price_id','modify_by','modify_on', 'created_on', 'created_by'
     ];
 
     public function addPlan($data)

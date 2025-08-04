@@ -78,12 +78,19 @@ class Usersub extends ResourceController
         ]);
     }
     $plan = $this->subscriptionPlanModel->getPlanById($planId);
+    // print_r($plan);
+    // exit;
     if (!$plan || (isset($plan['status']) && $plan['status'] == 9)) {
         return $this->failNotFound('This subscription plan has been deleted or is not available.');
     }
 
     $planName = $plan['plan_name'];
     $price = (float) ($plan['discount_price'] ?? 0);
+    $stripe_price_id = $plan['stripe_price_id'];
+    // print_r($stripe_price_id);
+    // exit;
+     
+   
     $startDate = $today;
     try {
         $start = new \DateTime($startDate);
@@ -101,6 +108,7 @@ class Usersub extends ResourceController
         'start_date'          => $startDate,
         'end_date'            => $endDate,
         'status'              => 1,
+        'stripe_price_id'     => $stripe_price_id ?? null,
         'created_on'          => date('Y-m-d H:i:s'),
         'created_by'          => $userId,
         'modify_on'           => date('Y-m-d H:i:s'),
