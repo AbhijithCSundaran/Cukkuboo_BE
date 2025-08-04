@@ -162,6 +162,9 @@ class GoogleLogin extends BaseController
 
             $this->loginModel->insert($newUserData);
             $userId = $this->loginModel->insertID();
+            $user = $this->loginModel->find($userId);
+            $autoNotification = new AutoNotification();
+            $autoNotification->sendAutoNotification($user['user_id'], 'account_created');
 
             $token = $jwt->encode(['user_id' => $userId]);
 
@@ -206,6 +209,9 @@ class GoogleLogin extends BaseController
 
         $this->loginModel->insert($newUserData);
         $userId = $this->loginModel->insertID();
+        $user = $this->loginModel->find($userId);
+        $autoNotification = new AutoNotification();
+        $autoNotification->sendAutoNotification($user['user_id'], 'account_created');
 
         $token = $jwt->encode(['user_id' => $userId]);
 

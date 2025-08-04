@@ -39,7 +39,8 @@ class WatchLaterModel extends Model
     $builder = $this->db->table('watch_later wl')
         ->select('wl.*, m.title, m.thumbnail, m.banner')
         ->join('movies_details m', 'm.mov_id = wl.mov_id', 'left')
-        ->where('wl.status !=', 9);
+        ->where('wl.status !=', 9)
+        ->where('m.status', 1);  
 
     if (!empty($search)) {
         $builder->like('m.title', $search);
@@ -61,7 +62,8 @@ class WatchLaterModel extends Model
         $builder = $this->db->table('watch_later wl')
             ->select('wl.*, m.title, m.thumbnail, m.banner')
             ->join('movies_details m', 'm.mov_id = wl.mov_id', 'left')
-            ->where('wl.status !=', 9);
+            ->where('wl.status !=', 9)
+            ->where('m.status', 1); 
 
         if (!empty($search)) {
             $builder->like('m.title', $search);
@@ -77,6 +79,7 @@ class WatchLaterModel extends Model
                 ->join('movies_details', 'movies_details.mov_id = watch_later.mov_id')
                 ->where('watch_later.watch_later_id', $watchLaterId)
                 ->where('watch_later.status !=', 9)
+                ->where('movies_details.status', 1) 
                 ->first();
 }
 
@@ -87,6 +90,7 @@ public function getWatchLaterByToken($userId)
         ->join('movies_details', 'movies_details.mov_id = watch_later.mov_id')
         ->where('watch_later.user_id', $userId)
         ->where('watch_later.status !=', 9)
+        ->where('movies_details.status', 1)
         ->get()
         ->getResultArray();
 }

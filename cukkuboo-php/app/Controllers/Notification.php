@@ -6,7 +6,6 @@ use App\Helpers\AuthHelper;
 use App\Models\NotificationModel;
 use App\Models\UserModel;
 use App\Libraries\AuthService;
-// use App\Libraries\NotificationService;
 
 class Notification extends ResourceController
 {
@@ -20,7 +19,6 @@ class Notification extends ResourceController
         $this->notificationModel = new NotificationModel();
         $this->UserModel = new UserModel();
         $this->authService = new AuthService();
-        // $this->notificationService = new NotificationService();
     }
 
     public function createOrUpdate()
@@ -34,7 +32,7 @@ class Notification extends ResourceController
 
     $notificationModel = new NotificationModel();
     $userModel = new UserModel(); 
-    // $notificationService = new NotificationService();
+    // $autoNotification = new AutoNotification();
 
     $data = $this->request->getJSON(true);
     $notificationId = $data['notification_id'] ?? null;
@@ -48,7 +46,7 @@ class Notification extends ResourceController
     $notificationData = [
     'user_id'       => $user['user_id'],   
     'title'         => $data['title'] ?? '',
-    'message'       => $data['message'] ?? '',  
+    'content'       => $data['content'] ?? '',  
     'type'          => 'global',  
     'target'        => in_array($data['target'] ?? '', ['all', 'premium', 'free']) ? $data['target'] : 'all',
     'is_scheduled'  => !empty($data['is_scheduled']) ? true : false,
@@ -79,9 +77,9 @@ class Notification extends ResourceController
         $notificationData['notification_id'] = $insertedId;
         $notificationData['name'] = $user['username'] ?? '';
         
-        //automatic notification
+        // //automatic notification
         // if (!empty($data['event_type'])) {
-        //     $notificationService->sendAutoNotification($user['user_id'], $data['event_type']);
+        //     $autoNotification->sendAutoNotification($user['user_id'], $data['event_type']);
         // }
         return $this->respond([
             'success' => true,
@@ -90,8 +88,6 @@ class Notification extends ResourceController
         ]);
     }
 }
-
-
     public function getAllNotifications()
 {
     // $authHeader = $this->request->getHeaderLine('Authorization');

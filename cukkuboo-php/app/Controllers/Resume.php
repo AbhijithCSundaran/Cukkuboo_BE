@@ -127,7 +127,7 @@ public function getUserHistory()
     if (!$authUser) {
         return $this->failUnauthorized('Invalid or missing token.');
     }
-    if ($user['status'] != 1) {
+    if ($authUser['status'] != 1) {
         return $this->failUnauthorized('Token expired. You have been logged out.');
     }
     $userId = $authUser['user_id'];

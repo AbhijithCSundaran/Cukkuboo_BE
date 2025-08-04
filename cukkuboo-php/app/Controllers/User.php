@@ -116,7 +116,8 @@ class User extends ResourceController
                 ]);
 
                 $user = $this->UserModel->find($newUserId);
-
+                $autoNotification = new AutoNotification();
+                $autoNotification->sendAutoNotification($user['user_id'], 'account_created');
                 $responseData = [
                     'user_id'       => $user['user_id'],
                     'username'      => $user['username'],
@@ -163,6 +164,8 @@ class User extends ResourceController
         ]);
 
         $user = $this->UserModel->find($newUserId);
+        $autoNotification = new AutoNotification();
+        $autoNotification->sendAutoNotification($user['user_id'], 'account_created');
 
         $responseData = [
             'user_id'       => $user['user_id'],
@@ -204,7 +207,8 @@ class User extends ResourceController
 
         $this->UserModel->updateUser($user_id, $updateData);
         $user = $this->UserModel->find($user_id);
-
+        $autoNotification = new AutoNotification();
+        $autoNotification->sendAutoNotification($user['user_id'], 'profile_updated');
         $responseData = [
             'user_id'       => $user['user_id'],
             'username'      => $user['username'],
@@ -566,7 +570,7 @@ public function updateEmailPreference()
     public function changePassword()
 {
     // $authHeader = $this->request->getHeaderLine('Authorization');
-     $authHeader = AuthHelper::getAuthorizationToken($this->request);
+    $authHeader = AuthHelper::getAuthorizationToken($this->request);
     $authuser = $this->authService->getAuthenticatedUser($authHeader);
 
     if (!$authuser) {
@@ -606,6 +610,9 @@ public function updateEmailPreference()
     ]);
 
     if ($updated) {
+        $autoNotification = new AutoNotification();
+        $autoNotification->sendAutoNotification($userId, 'password_changed');
+
         return $this->response->setJSON(['success' => 'true', 'message' => 'Password updated successfully.']);
     }
 
