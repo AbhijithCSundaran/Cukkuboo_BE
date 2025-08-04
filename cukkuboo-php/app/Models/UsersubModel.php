@@ -17,6 +17,7 @@ class UsersubModel extends Model
         'start_date',
         'end_date',
         'status',
+        'stripe_price_id',
         'created_by',
         'created_on',
         'modify_by',
