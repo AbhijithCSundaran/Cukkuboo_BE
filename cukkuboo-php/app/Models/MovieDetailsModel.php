@@ -240,7 +240,7 @@ public function getMostViewedList($limit, $offset)
     public function getRelatedMoviesQuery($currentMovie, $excludeId)
     {
     $builder = $this->builder()
-                    ->where('status !=', 9)
+                    ->where('status', 1) 
                     ->where('mov_id !=', $excludeId);
  
     $title        = $currentMovie['title'] ?? '';
