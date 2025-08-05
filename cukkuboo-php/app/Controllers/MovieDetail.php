@@ -180,7 +180,8 @@ public function getMovieDetails()
     }
 
     $builder = $this->moviedetail->builder(); 
-    $builder->where('status', 1);
+    $builder->where('status', 1)
+            ->where('release_date <=', date('Y-m-d'));
     if ($search !== '') {
         $searchWildcard = '%' . str_replace(' ', '%', $search) . '%';
         if ($search === 'free') {
@@ -413,7 +414,7 @@ public function movieReaction($mov_id)
     $pageSize = is_numeric($pageSize) && $pageSize > 0 ? (int)$pageSize : 10;
 
     $offset = $pageIndex * $pageSize;
-
+    $today = date('Y-m-d');
     $builder = $this->db->table('movies_details')->where('status', 1);
 
     // Optional search
@@ -431,16 +432,19 @@ if ($this->request->getGet('search') !== null && trim($search) !== '') {
     // Sorting logic based on `type`
     switch ($type) {
         case 'trending':
+            $builder->where('release_date <=', $today);
             $builder->orderBy('likes', 'DESC');
             $title = 'Trending Movies';
             break;
 
         case 'latest':
+            $builder->where('release_date <=', $today);
             $builder->orderBy('release_date', 'DESC');
             $title = 'Latest Movies';
             break;
 
         case 'most_viewed':
+            $builder->where('release_date <=', $today);
             $builder->orderBy('views', 'DESC');
             $title = 'Most Watched Movies';
             break;

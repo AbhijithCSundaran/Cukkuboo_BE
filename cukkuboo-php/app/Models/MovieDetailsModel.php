@@ -57,9 +57,10 @@ public function deleteMovieDetailsById($status, $mov_id)
            
   public function getFeaturedMovies()
 {
+    $today = date('Y-m-d');
     $results = $this->select('*, likes, dislikes')
                      ->where('status', 1)
-                    ->where('release_date <=', date('Y-m-d'))
+                    ->where('release_date <=',  $today)
                     ->orderBy('rating', 'DESC')
                     ->limit(5)
                     ->findAll();
@@ -73,9 +74,10 @@ public function deleteMovieDetailsById($status, $mov_id)
  
     public function getTrendingMovies()
 {
+    $today = date('Y-m-d');
     $results = $this->select('*, likes, dislikes')
                     ->where('status', 1)
-                    ->where('release_date <=', date('Y-m-d'))
+                    ->where('release_date <=', $today)
                     ->orderBy('rating', 'DESC')
                     ->limit(5)
                     ->findAll();
@@ -109,9 +111,10 @@ public function countAllMovies()
  
    public function latestMovies()
  {
-     return $this->db->table($this->table)
+    $today = date('Y-m-d');
+    return $this->db->table($this->table)
                     ->where('status', 1)
-                   ->where('release_date <=', date('Y-m-d'))
+                   ->where('release_date <=', $today)
                      ->orderBy('release_date', 'DESC')
                      ->limit(10)
                     ->get()
@@ -143,15 +146,18 @@ public function countAllMovies()
  
 public function getMostWatchedMovies()
 {
+    $today = date('Y-m-d');
+
     $results = $this->where('status', 1)
+                    ->where('release_date <=', $today)
                     ->orderBy('views', 'DESC')
                     ->limit(10)
                     ->findAll();
- 
+
     foreach ($results as &$row) {
         unset($row['video']);
     }
- 
+
     return $results;
 }
  public function getTrendingList($limit, $offset)
