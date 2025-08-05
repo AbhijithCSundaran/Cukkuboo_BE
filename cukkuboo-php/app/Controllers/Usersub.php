@@ -109,7 +109,7 @@ class Usersub extends ResourceController
         'price'               => $price,
         'start_date'          => $startDate,
         'end_date'            => $endDate,
-        'status'              => 1,
+        'status'              => 0,
         'stripe_price_id'     => $stripe_price_id ?? null,
         'created_on'          => date('Y-m-d H:i:s'),
         'created_by'          => $userId,
@@ -526,6 +526,119 @@ private function isValidDate($date, $format = 'Y-m-d')
 {
     $d = \DateTime::createFromFormat($format, $date);
     return $d && $d->format($format) === $date;
+}
+public function subscriptionPaid()
+{
+    $authHeader = AuthHelper::getAuthorizationToken($this->request);
+    $user = $this->authService->getAuthenticatedUser($authHeader);
+
+    if (!$user) {
+        return $this->failUnauthorized('Invalid or missing token.');
+    }
+    if ($user['status'] != 1) {
+        return $this->failUnauthorized('Token expired. You have been logged out.');
+    }
+    $data = $this->request->getJSON(true);
+
+    $subscriptionId = $data['user_subscription_id'] ?? null;
+
+    if (!$subscriptionId) {
+        return $this->failValidationErrors('user_subscription_id is required.');
+    }
+    $subscription = $this->usersubModel
+        ->where('user_subscription_id', $subscriptionId)
+        ->first();
+
+    if (!$subscription) {
+        return $this->failNotFound('Subscription not found.');
+    }
+    if ((int)$subscription['status'] === 1) {
+        return $this->respond([
+            'success' => true,
+            'message' => 'Subscription already marked as paid.',
+            'data' => [
+                'user_subscription_id' => $subscriptionId,
+                'status' => 1
+            ]
+        ]);
+    }
+
+    $update = $this->usersubModel->update($subscriptionId, [
+        'status'     => 1,
+        'modify_on'  => date('Y-m-d H:i:s'),
+        'modify_by'  => $subscription['user_id']
+    ]);
+
+    if (!$update) {
+        return $this->failServerError('Payment failed. Your subscription could not be activated.');
+    }
+
+    return $this->respond([
+        'success' => true,
+        'message' => 'Payment Successfully Completed.',
+        'data' => [
+            'user_subscription_id' => $subscriptionId,
+            'status' => 1
+        ]
+    ]);
+}
+public function subscriptionFailed()
+{
+    $authHeader = AuthHelper::getAuthorizationToken($this->request);
+    $user = $this->authService->getAuthenticatedUser($authHeader);
+
+    if (!$user) {
+        return $this->failUnauthorized('Invalid or missing token.');
+    }
+
+    if ($user['status'] != 1) {
+        return $this->failUnauthorized('Token expired. You have been logged out.');
+    }
+
+    $data = $this->request->getJSON(true);
+    $subscriptionId = $data['user_subscription_id'] ?? null;
+
+    if (!$subscriptionId) {
+        return $this->failValidationErrors('user_subscription_id is required.');
+    }
+
+    $subscription = $this->usersubModel
+        ->where('user_subscription_id', $subscriptionId)
+        ->first();
+
+    if (!$subscription) {
+        return $this->failNotFound('Subscription not found.');
+    }
+
+    if ((int)$subscription['status'] === 4) {
+        return $this->respond([
+            'success' => true,
+            'message' => 'Subscription is already marked as failed.',
+            'data' => [
+                'user_subscription_id' => $subscriptionId,
+                'status' => 4
+            ]
+        ]);
+    }
+
+    $updated = $this->usersubModel->update($subscriptionId, [
+        'status'    => 4,
+        'modify_on' => date('Y-m-d H:i:s'),
+        'modify_by' => $user['user_id']
+    ]);
+
+    if (!$updated) {
+        return $this->failServerError('Subscription as failed.');
+    }
+
+    return $this->respond([
+        'success' => true,
+        'message' => 'Payment failed. Your subscription could not be activated.',
+        'data' => [
+            'user_subscription_id' => $subscriptionId,
+            'status' => 4
+        ]
+    ]);
 }
 
 }

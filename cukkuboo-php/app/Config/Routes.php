@@ -103,6 +103,8 @@ $routes->delete('usersub/delete/(:num)', 'Usersub::deleteSubscription/$1');
 $routes->delete('usersub/cancelSubscription', 'Usersub::cancelSubscription');
 $routes->get('usersub/active', 'Usersub::getActiveSubscription');
 $routes->get('usersub/history', 'Usersub::getExpiredSubscriptions');
+$routes->post('usersub/status-update', 'Usersub::subscriptionPaid');
+$routes->post('usersub/payment-failed', 'Usersub::subscriptionFailed');
 
 //Reels like and views
 
