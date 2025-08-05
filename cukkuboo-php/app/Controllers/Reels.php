@@ -154,23 +154,31 @@ class Reels extends ResourceController
     $offset = $pageIndex * $pageSize;
     $builder = $this->reelsModel->where('status !=', 9);
 
-    if (!empty($search)) {
-       
-        $search = strtolower(trim(preg_replace('/\s+/', ' ', $search)));
-        $accessMap = [
-            'free' => '1',
-            'premium' => '2'
-        ];
-        $accessValue = $accessMap[$search] ?? null;
+    if (isset($search)) {
+    $search = strtolower(trim(preg_replace('/\s+/', ' ', (string)$search)));
+    if ($search === '0') {
+        return $this->response->setJSON([
+            'success' => true,
+            'message' => 'No results found for the search term.',
+            'data'    => [],
+            'total'   => 0
+        ]);
+    }
 
-        $builder->groupStart()
-            ->like('title', $search, 'both');
+    $accessMap = [
+        'free' => '1',
+        'premium' => '2'
+    ];
+    $accessValue = $accessMap[$search] ?? null;
 
-        if ($accessValue !== null) {
-            $builder->orWhere('access', $accessValue);
-        }
+    $builder->groupStart()
+        ->like('title', $search, 'both');
 
-        $builder->groupEnd();
+    if ($accessValue !== null) {
+        $builder->orWhere('access', $accessValue);
+    }
+
+    $builder->groupEnd();
     }
 
     $total = $builder->countAllResults(false);

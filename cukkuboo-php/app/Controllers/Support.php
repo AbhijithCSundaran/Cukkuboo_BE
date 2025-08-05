@@ -7,7 +7,7 @@ use App\Helpers\AuthHelper;
 use App\Models\SupportModel;
 use App\Libraries\AuthService;
 use App\Models\UserModel;
-use App\Models\NotificationModel;
+
 // require 'public/mailer/Exception.php';
 // require 'public/mailer/PHPMailer.php';
 // require 'public/mailer/SMTP.php';
@@ -27,7 +27,7 @@ class Support extends ResourceController
         $this->supportModel = new SupportModel();
         $this->authService = new AuthService();
         $this->UserModel = new UserModel();
-        $this->notificationModel = new NotificationModel();
+       
     }
     public function submitIssue() 
     {
@@ -49,7 +49,7 @@ class Support extends ResourceController
     if ($isAuthenticated) {
         $user_id = $user['user_id'];
     }
-    $autoNotification = new AutoNotification();
+    
     if ($supportId && $status !== null && !$name && !$email && !$phone && !$issue_type && !$description) {
         $existing = $this->supportModel->find($supportId);
         if (!$existing) {
@@ -137,8 +137,7 @@ class Support extends ResourceController
         if (!$isAuthenticated && isset($newData['user_id'])) {
             unset($newData['user_id']);
         }
-        $autoNotification->sendAutoNotification($user['user_id'], 'support_issue_created');
-        // $this->sendComplaintEmail($data);
+
         return $this->respond([
             'success' => true,
             'message' => 'Support issue created successfully',

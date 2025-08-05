@@ -45,6 +45,20 @@ class Usersub extends ResourceController
     if (!$planId) {
         return $this->failValidationErrors('subscriptionplan_id is required.');
     }
+    $twoDaysLater = date('Y-m-d', strtotime('+2 days'));
+    $expiringSoon = $this->usersubModel
+        ->where('user_id', $userId)
+        ->where('status', '1')
+        ->where('end_date', $twoDaysLater)
+        ->first();
+
+    if ($expiringSoon) {
+        $autoNotification = new AutoNotification();
+        $autoNotification->sendAutoNotification($userId, 'subscription_expired', [
+            'plan_name' => $expiringSoon['plan_name'],
+            'end_date'  => date('d F Y', strtotime($expiringSoon['end_date']))
+        ]);
+    }
 
     $today = date('Y-m-d');
     $expiredSubscriptions = $this->usersubModel
@@ -99,6 +113,7 @@ class Usersub extends ResourceController
         $end = clone $start;
         $end->add(new \DateInterval("P{$plan['period']}D"));
         $endDate = $end->format('Y-m-d');
+
     } catch (\Exception $e) {
         return $this->failValidationErrors('Invalid plan period.');
     }
@@ -138,11 +153,6 @@ class Usersub extends ResourceController
     $this->userModel->update($userId, ['subscription' => 'Premium']);
     $payload['start_date'] = date('d F Y', strtotime($payload['start_date']));
     $payload['end_date']   = date('d F Y', strtotime($payload['end_date']));
-    $autoNotification = new AutoNotification();
-    $autoNotification->sendAutoNotification($userId, 'subscription_started', [
-        'plan_name' => $planName,
-        'end_date'  => $payload['end_date']
-    ]);
     return $this->respond([
         'success' => true,
         'message' => $msg,
@@ -277,15 +287,11 @@ public function getUserSubscriptions()
 
     $subscriptions = $builder->orderBy('user_subscription.user_subscription_id', 'DESC')
                              ->findAll($pageSize, $offset);
-    $autoNotification = new AutoNotification();
+    
     foreach ($subscriptions as &$sub) {
     if ($sub['status'] == 1 && $sub['end_date'] < date('Y-m-d')) {
         $this->usersubModel->update($sub['user_subscription_id'], ['status' => 2]);
         $sub['status'] = 2;
-    $autoNotification->sendAutoNotification($sub['user_id'], 'subscription_expired', [
-            'plan_name' => $sub['plan_name'] ?? 'Your plan',
-            'end_date'  => $sub['end_date']
-        ]);
     }
     $sub['plan_type'] = ($sub['status'] == 1) ? 'Premium' : (($sub['status'] == 2) ? 'Expired' : (($sub['status'] == 3) ? 'Cancelled' : 'Unknown'));
 
@@ -572,7 +578,8 @@ public function subscriptionPaid()
     if (!$update) {
         return $this->failServerError('Payment failed. Your subscription could not be activated.');
     }
-
+    $autoNotification = new AutoNotification();
+    $autoNotification->sendAutoNotification($user['user_id'], 'subscription_started');
     return $this->respond([
         'success' => true,
         'message' => 'Payment Successfully Completed.',
