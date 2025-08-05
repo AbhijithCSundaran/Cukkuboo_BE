@@ -53,7 +53,7 @@ public function sendAutoNotification($userId, $eventType)
         ],
         'account_created' => [
             'title'   => 'Welcome to Cukkuboo',
-            'content' => 'Hi {{user_name}}, your account has been successfully created. Start watching now!',
+            'content' => 'Your account has been successfully created. Start watching now!.',
         ],
         
     ];
