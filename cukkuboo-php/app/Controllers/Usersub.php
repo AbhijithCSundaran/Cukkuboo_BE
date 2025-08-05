@@ -138,11 +138,11 @@ class Usersub extends ResourceController
     $this->userModel->update($userId, ['subscription' => 'Premium']);
     $payload['start_date'] = date('d F Y', strtotime($payload['start_date']));
     $payload['end_date']   = date('d F Y', strtotime($payload['end_date']));
-    // $autoNotification = new AutoNotification();
-    // $autoNotification->sendAutoNotification($userId, 'subscription_started', [
-    //     'plan_name' => $planName,
-    //     'end_date'  => $payload['end_date']
-    // ]);
+    $autoNotification = new AutoNotification();
+    $autoNotification->sendAutoNotification($userId, 'subscription_started', [
+        'plan_name' => $planName,
+        'end_date'  => $payload['end_date']
+    ]);
     return $this->respond([
         'success' => true,
         'message' => $msg,
