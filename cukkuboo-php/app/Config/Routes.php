@@ -163,7 +163,7 @@ $routes->delete('policy/delete/(:num)', 'Policy::deletePolicy/$1');
 
 //RevenueCat 
 $routes->get('subscription/(:any)', 'RevenueCat::getSubscription/$1');
-$routes->post('stripe/test', 'StripePayment::createCheckoutSession');
+$routes->post('stripe/payment', 'StripePayment::createCheckoutSession');
 
 
 
