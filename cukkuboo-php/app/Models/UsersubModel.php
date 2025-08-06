@@ -99,7 +99,7 @@ public function getTransactions()
 {
     return $this->select('user_subscription.*, user.username')
                 ->join('user', 'user.user_id = user_subscription.user_id', 'left')
-                ->whereNotIn('user_subscription.status', [3, 9])
+                ->whereIn('user_subscription.status', [1, 2])
                 ->where('MONTH(user_subscription.created_on)', date('m'))
                 ->where('YEAR(user_subscription.created_on)', date('Y'))
                 ->orderBy('user_subscription.created_on', 'DESC')
