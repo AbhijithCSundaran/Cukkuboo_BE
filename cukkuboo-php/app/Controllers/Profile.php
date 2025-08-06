@@ -58,17 +58,21 @@ class Profile extends BaseController
 			]);
 		}
 
-		$user = $this->loginModel->where('email', $email)->first();
+		$user = $this->loginModel
+			->where('email', $email)
+			->where('status !=', 9)
+			->orderBy('user_id', 'DESC')
+			->first();
 		if (!$user) {
 			return $this->response->setJSON([
 				'success' => false,
 				'message' => 'User not found.'
 			]);
 		}
-		if (isset($user['auth_type']) && strtolower($user['auth_type']) === 'google') {
+		if ($user['auth_type'] === 'google') {
 			return $this->response->setJSON([
 				'success' => false,
-				'message' => 'This email is registered via Google Sign-In. Please use the "Continue with Google" option to sign in.'
+				'message' => 'This account was created using Google Sign-In. Please use Google login to continue.'
 			]);
 		}
 		if($email && $newPassword && $confirmPassword && $otpInput) {
