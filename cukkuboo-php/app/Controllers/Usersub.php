@@ -80,11 +80,9 @@ class Usersub extends ResourceController
         ->where('end_date >=', $today)
         ->first();
 
-    if ($activeSub) {
-    $this->userModel->updateSubscriptionStatus($userId, 'Premium');
-    } else {
-        $this->userModel->updateSubscriptionStatus($userId, 'Expired');
-    }
+    // if (!$activeSub) {
+    //     $this->userModel->updateSubscriptionStatus($userId, 'Expired');
+    // }
 
     if ($activeSub) {
         return $this->respond([
@@ -150,7 +148,7 @@ class Usersub extends ResourceController
         $payload['user_subscription_id'] = $id;
         $msg = 'Subscription added successfully.';
     }
-    $this->userModel->update($userId, ['subscription' => 'Premium']);
+    // $this->userModel->update($userId, ['subscription' => 'Premium']);
     $payload['start_date'] = date('d F Y', strtotime($payload['start_date']));
     $payload['end_date']   = date('d F Y', strtotime($payload['end_date']));
     return $this->respond([
@@ -578,6 +576,10 @@ public function subscriptionPaid()
     if (!$update) {
         return $this->failServerError('Payment failed. Your subscription could not be activated.');
     }
+    $this->userModel->update($user['user_id'], [
+    'subscription' => 'Premium',
+    'modify_on' => date('Y-m-d H:i:s')
+]);
     $autoNotification = new AutoNotification();
     $autoNotification->sendAutoNotification($user['user_id'], 'subscription_started');
     return $this->respond([

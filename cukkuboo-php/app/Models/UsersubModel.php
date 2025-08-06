@@ -27,21 +27,21 @@ class UsersubModel extends Model
     protected $returnType = 'array';
 
 
-    public function saveUserSubscription(array $payload, $id = null)
-{
-    if ($id) {
-        $this->update($id, $payload);
-        return $id;
-    } else {
-        return $this->insert($payload);
-    }
-}
+//     public function saveUserSubscription(array $payload, $id = null)
+// {
+//     if ($id) {
+//         $this->update($id, $payload);
+//         return $id;
+//     } else {
+//         return $this->insert($payload);
+//     }
+// }
 
     
-    public function getAllSubscriptions()
-    {
-        return $this->orderBy($this->primaryKey, 'DESC')->findAll();
-    }
+    // public function getAllSubscriptions()
+    // {
+    //     return $this->orderBy($this->primaryKey, 'DESC')->findAll();
+    // }
 
     
     public function getUserSubscriptionById($userId, $subscriptionId)
