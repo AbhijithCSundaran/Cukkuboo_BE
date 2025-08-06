@@ -27,35 +27,35 @@ class UsersubModel extends Model
     protected $returnType = 'array';
 
 
-    public function saveUserSubscription(array $payload, $id = null)
-{
-    if ($id) {
-        $this->update($id, $payload);
-        return $id;
-    } else {
-        return $this->insert($payload);
-    }
-}
+//     public function saveUserSubscription(array $payload, $id = null)
+// {
+//     if ($id) {
+//         $this->update($id, $payload);
+//         return $id;
+//     } else {
+//         return $this->insert($payload);
+//     }
+// }
 
     
-    public function getAllSubscriptions()
-    {
-        return $this->orderBy($this->primaryKey, 'DESC')->findAll();
-    }
+    // public function getAllSubscriptions()
+    // {
+    //     return $this->orderBy($this->primaryKey, 'DESC')->findAll();
+    // }
 
     
     public function getUserSubscriptionById($userId, $subscriptionId)
     {
         return $this->where('user_subscription_id', $subscriptionId)
                     ->where('user_id', $userId)
-                    ->whereIn('status', [1, 2, 3])
+                    ->whereIn('status', [1, 2, 3, 4])
                     ->first();
     }
 
     public function getUserSubscriptions($userId)
     {
         return $this->where('user_id', $userId)
-                    ->whereIn('status', [1, 2, 3])
+                    ->whereIn('status', [1, 2, 3, 4])
                     ->findAll();
     }
     public function DeleteSubscriptionById($status, $id, $modifiedBy = null)
@@ -99,7 +99,7 @@ public function getTransactions()
 {
     return $this->select('user_subscription.*, user.username')
                 ->join('user', 'user.user_id = user_subscription.user_id', 'left')
-                ->whereNotIn('user_subscription.status', [3, 9])
+                ->whereIn('user_subscription.status', [1, 2])
                 ->where('MONTH(user_subscription.created_on)', date('m'))
                 ->where('YEAR(user_subscription.created_on)', date('Y'))
                 ->orderBy('user_subscription.created_on', 'DESC')
