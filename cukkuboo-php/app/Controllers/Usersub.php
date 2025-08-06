@@ -265,7 +265,7 @@ public function getUserSubscriptions()
     $userSubModel = new UsersubModel();
     $builder = $userSubModel->select('user_subscription.*, user.username')
                             ->join('user', 'user.user_id = user_subscription.user_id', 'left')
-                            ->where('user_subscription.status !=', 9);
+                            ->whereNotIn('user_subscription.status', [0, 9]);
 
     if (!empty($search)) {
         $builder->groupStart()

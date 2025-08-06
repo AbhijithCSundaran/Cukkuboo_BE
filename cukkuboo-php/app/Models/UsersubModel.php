@@ -48,14 +48,14 @@ class UsersubModel extends Model
     {
         return $this->where('user_subscription_id', $subscriptionId)
                     ->where('user_id', $userId)
-                    ->whereIn('status', [1, 2, 3])
+                    ->whereIn('status', [1, 2, 3, 4])
                     ->first();
     }
 
     public function getUserSubscriptions($userId)
     {
         return $this->where('user_id', $userId)
-                    ->whereIn('status', [1, 2, 3])
+                    ->whereIn('status', [1, 2, 3, 4])
                     ->findAll();
     }
     public function DeleteSubscriptionById($status, $id, $modifiedBy = null)

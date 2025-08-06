@@ -276,16 +276,6 @@ class Profile extends BaseController
 	}
 
 
-	public function removeUser()
-{
-    $userId = $this->request->getPost('userId');
-
-    if ($userId) {
-        $this->AuthModel->delUser($userId);
-        return $this->response->setJSON(['success' => true, 'message' => 'User removed']);
-    } else {
-        return $this->response->setJSON(['success' => false, 'message' => 'User ID missing']);
-    }
-}
+	
 
 }
