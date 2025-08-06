@@ -6,6 +6,7 @@ use CodeIgniter\RESTful\ResourceController;
 use App\Helpers\AuthHelper; 
 use App\Models\ReelViewModel;
 use App\Models\UserModel;
+use App\Models\ReelsModel;
 use App\Libraries\AuthService;
 
 class ReelView extends ResourceController
@@ -20,13 +21,13 @@ class ReelView extends ResourceController
         $this->input = \Config\Services::request();
         $this->reelViewModel = new ReelViewModel();
         $this->userModel = new UserModel();
+        $this->reelsModel = new ReelsModel();
         $this->authService = new AuthService();
     }
 
     public function viewReel()
 {
-    // $authHeader = $this->request->getHeaderLine('Authorization');
-   $authHeader = AuthHelper::getAuthorizationToken($this->request);
+    $authHeader = AuthHelper::getAuthorizationToken($this->request);
     $user = $this->authService->getAuthenticatedUser($authHeader);
 
     if (!$user) {
@@ -39,11 +40,13 @@ class ReelView extends ResourceController
     $status = $data['status'] ?? null;
 
     if (!$reelId || $status != 1) {
-        return $this->failValidationError('Invalid or missing data');
+        return $this->fail('Invalid or missing data.', 422);
     }
-    // if ($user['status'] != 1) {
-    //     return $this->failUnauthorized('Token expired. You have been logged out.');
-    // }
+    $reel = $this->reelsModel->find($reelId);
+    if (!$reel || $reel['status'] == 9) {
+        return $this->failNotFound('Reel not found or has been deleted.');
+    }
+
     $existing = $this->reelViewModel->getUserReelView($userId, $reelId);
 
     if (!$existing) {
@@ -70,5 +73,4 @@ class ReelView extends ResourceController
         ]
     ]);
 }
-
 }

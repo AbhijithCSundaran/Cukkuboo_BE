@@ -273,17 +273,32 @@ public function getActiveReels()
 public function getReelById($id)
 {
     
-    //$authHeader = AuthHelper::getAuthorizationToken($this->request);
-    // $user = $this->authService->getAuthenticatedUser($authHeader);
+    $authHeader = AuthHelper::getAuthorizationToken($this->request);
+    $user = $this->authService->getAuthenticatedUser($authHeader);
     // if(!$user){ 
     //         return $this->failUnauthorized('Invalid or missing token.');
     // }
     $data = $this->reelsModel->getReelDetailsById($id);
 
+    if (!$data) {
+        return $this->failNotFound('Reel not found.');
+    }
+    if ($user) {
+        $user_id = $user['user_id'];
+
+        $data['is_liked_by_user'] = $this->reelsModel->isLikedByUser($id, $user_id);
+
+        $isViewed = $this->db->table('reel_view')
+                             ->where('reels_id', $id)
+                             ->where('user_id', $user_id)
+                             ->countAllResults();
+
+        $data['is_viewed'] = $isViewed > 0;
+    }
     return $this->response->setJSON([
         'success' => true,
         'message' => 'Reel details fetched successfully.',
-        'data' => $data
+        'data'    => $data
     ]);
 }
 
