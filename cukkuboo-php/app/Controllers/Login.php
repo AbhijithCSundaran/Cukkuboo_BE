@@ -24,6 +24,7 @@ class Login extends BaseController
         $this->subscriptionPlanModel = new SubscriptionPlanModel();
         $this->userModel = new UserModel();
         $this->notificationModel = new NotificationModel();
+        $this->authService = new AuthService();
     }
 
     public function loginFun()
@@ -237,8 +238,8 @@ class Login extends BaseController
     }
 
     $this->loginModel->update($user['user_id'], ['jwt_token' => null]);
-    $autoNotification = new AutoNotification();
-    $autoNotification->sendAutoNotification($user['user_id'], 'account_logout');
+    // $autoNotification = new AutoNotification();
+    // $autoNotification->sendAutoNotification($user['user_id'], 'account_logout');
     return $this->response->setJSON([
         'success' => true,
         'message' => 'Logout successful. Token removed.',
@@ -280,6 +281,50 @@ public function resetPassword()
         'success' => true,
         'message' => 'Password reset successful.',
         
+    ]);
+}
+public function refreshFcmToken()
+{
+    $authHeader = AuthHelper::getAuthorizationToken($this->request);
+    $user = $this->authService->getAuthenticatedUser($authHeader);
+
+    if (!$user) {
+        return $this->failUnauthorized('Invalid or missing token.');
+    }
+    $data = $this->request->getJSON(true);
+    if (!isset($data['fcm_token'])) {
+        return $this->response->setJSON([
+            'success' => false,
+            'message' => 'FCM token is required.',
+            'data'    => []
+        ]);
+    }
+    $userId = $user['user_id'];
+    $fcmToken = $data['fcm_token'];
+    $user = $this->loginModel
+        ->where('user_id', $userId)
+        ->whereIn('status', [1])
+        ->first();
+
+    if (!$user) {
+        return $this->response->setJSON([
+            'success' => false,
+            'message' => 'User not found or inactive.',
+            'data'    => []
+        ]);
+    }
+    $this->loginModel->update($userId, [
+            'fcm_token' => $fcmToken,
+            'updated_at' => date('Y-m-d H:i:s')
+        ]);
+
+    return $this->response->setJSON([
+        'success' => true,
+        'message' => 'FCM token updated successfully.',
+        'data'    => [
+            'user_id'   => $userId,
+            'fcm_token' => $fcmToken
+        ]
     ]);
 }
 }

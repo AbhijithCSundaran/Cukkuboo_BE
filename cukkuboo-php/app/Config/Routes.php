@@ -13,6 +13,7 @@ $routes->post('login/login', 'Login::loginFun',['filter' => 'cors']);
 $routes->post('login/logout', 'Login::logout');
 $routes->post('user/change-password', 'User::changePassword');
 $routes->post('login/google-login', 'GoogleLogin::googleLogin');
+$routes->post('user/refresh-token','Login::refreshFcmToken');
 //User 
 
 $routes->post('user/register','User::registerFun');

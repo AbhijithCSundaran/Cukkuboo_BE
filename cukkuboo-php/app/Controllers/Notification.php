@@ -32,8 +32,6 @@ class Notification extends ResourceController
 
     $notificationModel = new NotificationModel();
     $userModel = new UserModel(); 
-    // $autoNotification = new AutoNotification();
-
     $data = $this->request->getJSON(true);
     $notificationId = $data['notification_id'] ?? null;
 
@@ -61,7 +59,6 @@ class Notification extends ResourceController
 
         $updated = $notificationModel->update($notificationId, $notificationData);
         $notificationData['notification_id'] = $notificationId;
-        $notificationData['name'] = $user['username'] ?? '';
 
         return $this->respond([
             'success' => true,
@@ -74,13 +71,8 @@ class Notification extends ResourceController
         $notificationData['status'] = 1;
 
         $insertedId = $notificationModel->insert($notificationData);
-        $notificationData['notification_id'] = $insertedId;
-        $notificationData['name'] = $user['username'] ?? '';
-        
-        // //automatic notification
-        // if (!empty($data['event_type'])) {
-        //     $autoNotification->sendAutoNotification($user['user_id'], $data['event_type']);
-        // }
+        $notificationData['notification_id'] = $insertedId; 
+    
         return $this->respond([
             'success' => true,
             'message' => 'Notification created',
