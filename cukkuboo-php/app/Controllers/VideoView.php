@@ -5,6 +5,7 @@ namespace App\Controllers;
 use CodeIgniter\RESTful\ResourceController;
 use App\Helpers\AuthHelper; 
 use App\Models\VideoviewModel;
+use App\Models\MovieDetailsModel;
 use App\Models\UserModel;
 use App\Libraries\AuthService;
 
@@ -19,6 +20,7 @@ class VideoView extends ResourceController
         $this->session = \Config\Services::session();
         $this->input = \Config\Services::request();
         $this->videoviewModel = new VideoviewModel();
+        $this->moviedetail = new MovieDetailsModel();
         $this->userModel = new UserModel();	
         $this->authService = new AuthService();
     }
@@ -39,7 +41,20 @@ class VideoView extends ResourceController
     $movieId = $data['mov_id'] ?? null;
 
     if (!$movieId) {
-        return $this->fail('Movie ID is required.', 422);
+        return $this->respond([
+            'success' => false,
+            'message' => 'Movie ID is required.',
+            'data'    => []
+        ]);
+    }
+    $movieModel = new MovieDetailsModel();
+    $movie = $movieModel->find($movieId);
+    if (!$movie || $movie['status'] != 1) {
+        return $this->respond([
+            'success' => false,
+            'message' => 'Only active movies can be viewed.',
+            'data'    => []
+        ]); 
     }
 
     $userId = $user['user_id'];
@@ -50,6 +65,7 @@ class VideoView extends ResourceController
         $this->videoviewModel->insertUserView([
             'user_id'    => $userId,
             'mov_id'     => $movieId,
+            'status'     => 1,
             'created_on' => date('Y-m-d H:i:s'),
             'created_by' => $userId
         ]);

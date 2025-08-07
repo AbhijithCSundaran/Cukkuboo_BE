@@ -4,6 +4,7 @@ namespace App\Controllers;
 
 use CodeIgniter\RESTful\ResourceController;
 use App\Helpers\AuthHelper; 
+use App\Models\ReelsModel;
 use App\Models\ReelLikeModel;
 use App\Models\UserModel;
 use App\Libraries\AuthService;
@@ -19,6 +20,7 @@ class ReelLike extends ResourceController
         $this->session = \Config\Services::session();
         $this->input = \Config\Services::request();
         $this->reelLikeModel = new ReelLikeModel();
+        $this->reelsModel = new ReelsModel();
         $this->userModel = new UserModel();
         $this->authService = new AuthService();
     }
@@ -26,7 +28,7 @@ class ReelLike extends ResourceController
     public function reelLike()
     {
         // $authHeader = $this->request->getHeaderLine('Authorization');
-         $authHeader = AuthHelper::getAuthorizationToken($this->request);
+        $authHeader = AuthHelper::getAuthorizationToken($this->request);
         $user = $this->authService->getAuthenticatedUser($authHeader);
 
         if (!$user) {
@@ -41,7 +43,14 @@ class ReelLike extends ResourceController
         if (!$userId || !$reelId || !in_array($status, [1, 2])) {
             return $this->failValidationError('Missing or invalid fields.');
         }
-
+        $reel = $this->reelsModel->find($reelId);
+        if (!$reel || $reel['status'] != 1) {
+            return $this->respond([
+                'success' => false,
+                'message' => 'Reel is not active.',
+                'data' => []
+            ]);
+        }
         $existing = $this->reelLikeModel->getUserReelLike($userId, $reelId);
 
         if (!$existing) {
