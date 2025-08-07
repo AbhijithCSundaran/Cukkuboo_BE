@@ -34,7 +34,7 @@ class SubscriptionPlan extends ResourceController
     }
  
     if (!isset($data['plan_name'], $data['price'], $data['discount_price'], $data['period'], $data['stripe_price_id'])) {
-        return $this->failValidationErrors('Plan name, price, discount_price, and period are required.');
+        return $this->failValidationErrors('Plan name, price, discount_price, stripe_price_id and period are required.');
     }
  
     // Accept any positive integer for period
