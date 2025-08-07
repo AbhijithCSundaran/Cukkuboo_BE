@@ -351,7 +351,8 @@ public function cancelSubscription()
     $userId = $user['user_id'];
     $this->usersubModel->cancelUserSubscription($userId);
     $this->userModel->setUserSubscription($userId);
-
+    $autoNotification = new AutoNotification();
+    $autoNotification->sendAutoNotification($user['user_id'], 'subscription_cancelled');
     return $this->respond([
         'success' => true,
         'message' => 'Subscription cancelled successfully.',

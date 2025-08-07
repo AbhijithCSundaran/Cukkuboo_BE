@@ -55,6 +55,10 @@ public function sendAutoNotification($userId, $eventType)
             'title'   => 'Welcome to Cukkuboo',
             'content' => 'Your account has been successfully created. Start watching now!.',
         ],
+        'subscription_cancelled' => [
+            'title'   => 'Subscription Cancelled',
+            'content' => 'Your subscription has been cancelled. We hope to have you back soon to enjoy more premium content.',
+        ],
         
     ];
 
