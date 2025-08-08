@@ -40,7 +40,7 @@ class GoogleLogin extends BaseController
 
     $googleToken = $data['google_token'];
     $email = $data['email'];
-
+    $fcmToken = isset($data['fcm_token']) ? $data['fcm_token'] : null;
     // Verify Google ID token
     $client = \Config\Services::curlrequest();
     $response = $client->get("https://oauth2.googleapis.com/tokeninfo?id_token=" . $googleToken);
@@ -116,10 +116,10 @@ class GoogleLogin extends BaseController
             'last_login' => $now,
             'updated_at' => $now
         ];
-        if (!empty($data['username'])) $updateData['username'] = $data['username'];
-        if (!empty($data['phone']))    $updateData['phone'] = $data['phone'];
-        if (!empty($data['country']))  $updateData['country'] = $data['country'];
-
+        // if (!empty($data['username'])) $updateData['username'] = $data['username'];
+        // if (!empty($data['phone']))    $updateData['phone'] = $data['phone'];
+        // if (!empty($data['country']))  $updateData['country'] = $data['country'];
+        if (!empty($fcmToken))$updateData['fcm_token'] = $fcmToken; 
         $this->loginModel->update($activeUser['user_id'], $updateData);
         if (isset($activeUser['auth_type']) && $activeUser['auth_type'] === 'google') {
             $this->loginModel->update($activeUser['user_id'], ['auth_type' => 'google']);
@@ -137,7 +137,8 @@ class GoogleLogin extends BaseController
             $token = $jwt->encode(['user_id' => $existingNewUser['user_id']]);
             $this->loginModel->update($existingNewUser['user_id'], [
                 'jwt_token'  => $token,
-                'last_login' => $now
+                'last_login' => $now,
+                'fcm_token'  => $fcmToken ? $fcmToken : $existingNewUser['fcm_token'] 
             ]);
             $user = $this->loginModel->find($existingNewUser['user_id']);
         } else {
@@ -157,7 +158,8 @@ class GoogleLogin extends BaseController
                 'country'        => '',
                 'created_at'     => $now,
                 'last_login'     => $now,
-                'updated_at'     => $now
+                'updated_at'     => $now,
+                'fcm_token'      => $fcmToken ?? ''
             ];
 
             $this->loginModel->insert($newUserData);
@@ -204,7 +206,8 @@ class GoogleLogin extends BaseController
             'country'        => '',
             'created_at'     => $now,
             'last_login'     => $now,
-            'updated_at'     => $now
+            'updated_at'     => $now,
+            'fcm_token'      => $fcmToken ?? ''
         ];
 
         $this->loginModel->insert($newUserData);
@@ -274,7 +277,8 @@ class GoogleLogin extends BaseController
             'lastLogin'    => $now,
             'jwt_token'    => $token,
             'notifications' => $unreadCount,
-            'subscription_details' => $subscriptionData
+            'subscription_details' => $subscriptionData,
+            'fcm_token'    => $user['fcm_token'] ?? ($fcmToken ?? '') 
         ]
     ]);
 }
