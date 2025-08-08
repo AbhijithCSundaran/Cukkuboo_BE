@@ -425,6 +425,7 @@ if ($this->request->getGet('search') !== null && trim($search) !== '') {
 
     $builder->groupStart()
         ->like('LOWER(title)', $searchWildcard)
+        ->orLike('LOWER(cast_details)', $searchWildcard)
         ->groupEnd();
 }
 
@@ -453,7 +454,7 @@ if ($this->request->getGet('search') !== null && trim($search) !== '') {
             return $this->respond([
                 'success' => false,
                 'message' => 'Invalid type parameter.'
-            ], 400);
+            ]);
     }
 
     
@@ -476,6 +477,7 @@ if ($this->request->getGet('search') !== null && trim($search) !== '') {
         'mov_id' => $movie['mov_id'],
         'title' => $movie['title'],
         'thumbnail' => $movie['thumbnail'],
+        'cast_details' => $movie['cast_details'],
         'banner' => $movie['banner'],
         'release_date' => $movie['release_date'],
         'views' => $movie['views'],
@@ -522,18 +524,7 @@ if ($this->request->getGet('search') !== null && trim($search) !== '') {
             return $this->failServerError("Failed to delete movie with ID $mov_id.");
         }
     }
- 
- 
- 
- 
- 
- 
- 
- 
- 
 // --------------------------------- mobile--------------------------------------//
- 
- 
  
    public function homeDisplay()
 {
