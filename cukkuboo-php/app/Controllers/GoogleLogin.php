@@ -158,8 +158,7 @@ class GoogleLogin extends BaseController
                 'country'        => '',
                 'created_at'     => $now,
                 'last_login'     => $now,
-                'updated_at'     => $now,
-                'fcm_token'      => $fcmToken ?? ''
+                'updated_at'     => $now
             ];
 
             $this->loginModel->insert($newUserData);
@@ -206,8 +205,7 @@ class GoogleLogin extends BaseController
             'country'        => '',
             'created_at'     => $now,
             'last_login'     => $now,
-            'updated_at'     => $now,
-            'fcm_token'      => $fcmToken ?? ''
+            'updated_at'     => $now
         ];
 
         $this->loginModel->insert($newUserData);
@@ -277,8 +275,7 @@ class GoogleLogin extends BaseController
             'lastLogin'    => $now,
             'jwt_token'    => $token,
             'notifications' => $unreadCount,
-            'subscription_details' => $subscriptionData,
-            'fcm_token'    => $user['fcm_token'] ?? ($fcmToken ?? '') 
+            'subscription_details' => $subscriptionData
         ]
     ]);
 }
