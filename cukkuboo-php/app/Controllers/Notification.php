@@ -51,8 +51,6 @@ class Notification extends ResourceController
     'scheduled_time'=> !empty($data['scheduled_time']) ? $data['scheduled_time'] : null,
     'status'        => 1,
 ];
-
-
     if ($notificationId) {
         $notificationData['modify_by'] = $user['user_id'];
         $notificationData['modify_on'] = date('Y-m-d H:i:s');
@@ -208,7 +206,7 @@ class Notification extends ResourceController
 {
     // $authHeader = $this->request->getHeaderLine('Authorization');
     // $authUser = $this->authService->getAuthenticatedUser($authHeader);
-     $authHeader = AuthHelper::getAuthorizationToken($this->request);
+    $authHeader = AuthHelper::getAuthorizationToken($this->request);
     $authUser = $this->authService->getAuthenticatedUser($authHeader);
 
     if (!$authUser) {
@@ -238,9 +236,6 @@ class Notification extends ResourceController
         'data' => $result['data']
     ]);
 }
-
-
-
 public function getNotificationById($notificationId = null)
 {
     // $authHeader = $this->request->getHeaderLine('Authorization');
@@ -250,9 +245,9 @@ public function getNotificationById($notificationId = null)
     if (!$authUser) {
         return $this->failUnauthorized('Invalid or missing token.');
     }
-    // if ($authUser['status'] != 1) {
-    //     return $this->failUnauthorized('Token expired. You have been logged out.');
-    // }
+    if ($authUser['status'] != 1) {
+        return $this->failUnauthorized('Token expired. You have been logged out.');
+    }
 
     if ($notificationId === null) {
         return $this->failValidationErrors('Notification ID is required.');
