@@ -80,7 +80,7 @@ public function cancelUserSubscription($userId)
 
 public function countCurrentMonthSubscribers()
     {
-    return $this->where('status', 2) 
+    return $this->where('status', 1) 
                 ->where('MONTH(created_on)', date('m'))
                 ->where('YEAR(created_on)', date('Y'))
                 ->countAllResults();
@@ -88,7 +88,7 @@ public function countCurrentMonthSubscribers()
 public function currentTotalRevenue()
 {
     return $this->selectSum('price')
-        ->whereNotIn('status', [3, 9])
+        ->whereIn('status', [1])
         ->where('MONTH(start_date)', date('m'))
         ->where('YEAR(start_date)', date('Y'))
         ->get()
