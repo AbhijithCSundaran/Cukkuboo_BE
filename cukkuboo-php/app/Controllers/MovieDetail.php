@@ -524,18 +524,7 @@ if ($this->request->getGet('search') !== null && trim($search) !== '') {
             return $this->failServerError("Failed to delete movie with ID $mov_id.");
         }
     }
- 
- 
- 
- 
- 
- 
- 
- 
- 
 // --------------------------------- mobile--------------------------------------//
- 
- 
  
    public function homeDisplay()
 {
