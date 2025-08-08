@@ -477,6 +477,7 @@ if ($this->request->getGet('search') !== null && trim($search) !== '') {
         'mov_id' => $movie['mov_id'],
         'title' => $movie['title'],
         'thumbnail' => $movie['thumbnail'],
+        'cast_details' => $movie['cast_details'],
         'banner' => $movie['banner'],
         'release_date' => $movie['release_date'],
         'views' => $movie['views'],
