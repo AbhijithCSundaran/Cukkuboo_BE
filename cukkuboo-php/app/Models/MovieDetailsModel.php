@@ -114,11 +114,11 @@ public function countAllMovies()
     $today = date('Y-m-d');
     return $this->db->table($this->table)
                     ->where('status', 1)
-                   ->where('release_date <=', $today)
-                     ->orderBy('release_date', 'DESC')
-                     ->limit(10)
+                    ->where('release_date <=', $today)
+                    ->orderBy('release_date', 'DESC')
+                    ->limit(10)
                     ->get()
-                   ->getResultArray();
+                    ->getResultArray();
  }
 // public function getLatestMovies($limit = 10, $offset = 0, $search = null)
 // {

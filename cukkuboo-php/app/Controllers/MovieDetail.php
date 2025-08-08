@@ -425,6 +425,7 @@ if ($this->request->getGet('search') !== null && trim($search) !== '') {
 
     $builder->groupStart()
         ->like('LOWER(title)', $searchWildcard)
+        ->orLike('LOWER(cast_details)', $searchWildcard)
         ->groupEnd();
 }
 
@@ -453,7 +454,7 @@ if ($this->request->getGet('search') !== null && trim($search) !== '') {
             return $this->respond([
                 'success' => false,
                 'message' => 'Invalid type parameter.'
-            ], 400);
+            ]);
     }
 
     
