@@ -165,5 +165,6 @@ $routes->get('subscription/(:any)', 'RevenueCat::getSubscription/$1');
 $routes->post('stripe/payment', 'StripePayment::createCheckoutSession');
 
 
-
+$routes->get('notification/globallist', 'Notification::getNotifications'); 
+$routes->post('notification/mark', 'Notification::markAllAsReadUnread'); 
 ?>

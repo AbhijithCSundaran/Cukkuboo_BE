@@ -4,6 +4,7 @@ namespace App\Controllers;
 use CodeIgniter\RESTful\ResourceController;
 use App\Helpers\AuthHelper; 
 use App\Models\NotificationModel;
+// use App\Models\GlobalNotificationModel;
 use App\Models\UserModel;
 use App\Libraries\AuthService;
 
@@ -17,6 +18,7 @@ class Notification extends ResourceController
         $this->session = \Config\Services::session();
         $this->input = \Config\Services::request();
         $this->notificationModel = new NotificationModel();
+        // $this->notificationModel = new GlobalNotificationModel();
         $this->UserModel = new UserModel();
         $this->authService = new AuthService();
     }
@@ -111,11 +113,9 @@ class Notification extends ResourceController
     ]);
 }
 
-
     public function delete($notification_id = null)
-    {
-    // $authHeader = $this->request->getHeaderLine('Authorization');
-     $authHeader = AuthHelper::getAuthorizationToken($this->request);
+{
+    $authHeader = AuthHelper::getAuthorizationToken($this->request);
     $user = $this->authService->getAuthenticatedUser($authHeader);
 
     if (!$user) {
@@ -126,8 +126,16 @@ class Notification extends ResourceController
         return $this->failNotFound('Notification ID not provided.');
     }
     $deleted = $this->notificationModel->softDelete($notification_id, $user['user_id']);
-
     if ($deleted) {
+        $db = \Config\Database::connect();
+        $globalTable = $db->table('global_notification');
+
+        $globalTable
+            ->where('notification_id', $notification_id)
+            ->where('user_id', $user['user_id'])
+            ->set(['status' => 9])
+            ->update();
+
         return $this->respondDeleted([
             'success' => true,
             'message' => "Notification with ID $notification_id marked as deleted successfully.",
@@ -136,9 +144,7 @@ class Notification extends ResourceController
     } else {
         return $this->failServerError("Failed to delete notification with ID $notification_id.");
     }
-    }
-
-
+}
    public function markAllAsReadOrUnread()
 {
     // $authHeader = $this->request->getHeaderLine('Authorization');
@@ -193,8 +199,6 @@ class Notification extends ResourceController
             'message' => 'All read notifications marked as unread.',
         ]);
     }
-
-    // No unread or read notifications found
     return $this->respond([
         'success' => true,
         'message' => 'No notifications to update.',
@@ -266,32 +270,146 @@ public function getNotificationById($notificationId = null)
     ]);
 }
 
-public function sendDueNotifications()
-{
-    $dueNotifications = $this->notificationModel->where('is_scheduled', true)
-                                                ->where('scheduled_time <=', date('Y-m-d H:i:s'))
-                                                ->where('sent', 0)
-                                                ->findAll();
+// public function sendDueNotifications()
+// {
+//     $dueNotifications = $this->notificationModel->where('is_scheduled', true)
+//                                                 ->where('scheduled_time <=', date('Y-m-d H:i:s'))
+//                                                 ->where('sent', 0)
+//                                                 ->findAll();
 
-    foreach ($dueNotifications as $notification) {
-        $this->sendNotificationToTargetUsers($notification);
-        $this->notificationModel->update($notification['id'], ['sent' => 1]);
+//     foreach ($dueNotifications as $notification) {
+//         $this->sendNotificationToTargetUsers($notification);
+//         $this->notificationModel->update($notification['id'], ['sent' => 1]);
+//     }
+
+//     return $this->respond(['message' => 'Scheduled notifications sent.']);
+// }
+
+// protected function sendNotificationToTargetUsers($notification)
+// {
+//     $target = $notification['target'];
+//     if ($target === 'all') {
+//         $users = $this->UserModel->findAll();
+//     } else {
+//         $users = $this->UserModel->where('subscription', strtolower($target))->findAll();
+//     }
+
+//     $userIds = array_column($users, 'user_id');
+
+// }
+
+public function getNotifications()
+{
+    $authHeader = AuthHelper::getAuthorizationToken($this->request);
+    $user = $this->authService->getAuthenticatedUser($authHeader);
+
+    if (!$user) {
+        return $this->failUnauthorized('Invalid or missing token.');
+    }
+    if ($user['status'] != 1) {
+        return $this->failUnauthorized('Token expired. You have been logged out.');
     }
 
-    return $this->respond(['message' => 'Scheduled notifications sent.']);
+    $pageIndex = (int) $this->request->getGet('pageIndex');
+    $pageSize  = (int) $this->request->getGet('pageSize');
+    $search    = $this->request->getGet('search');
+
+    if ($pageSize <= 0) {
+        $pageSize = 10;
+    }
+
+    $offset = $pageIndex * $pageSize;
+    $notificationsModel = new notificationModel();
+    $data = $notificationsModel->getUserNotificationsFiltered($pageSize, $offset, $search);
+
+    return $this->respond([
+        'success' => true,
+        'message' => 'Notifications fetched successfully.',
+        'data'    => $data['notifications'],
+        'total'   => $data['total']
+    ]);
 }
 
-protected function sendNotificationToTargetUsers($notification)
+  public function markAllAsReadUnread()
 {
-    $target = $notification['target'];
-    if ($target === 'all') {
-        $users = $this->UserModel->findAll();
+    $authHeader = AuthHelper::getAuthorizationToken($this->request);
+    $user = $this->authService->getAuthenticatedUser($authHeader);
+
+    if (!$user) {
+        return $this->failUnauthorized('Invalid or missing token.');
+    }
+    if ($user['status'] != 1) {
+        return $this->failUnauthorized('Token expired. You have been logged out.');
+    }
+    $userId = $user['user_id'];
+    $hasUnreadNormal = $this->notificationModel
+        ->where('user_id', $userId)
+        ->where('status', 1) 
+        ->where('type !=', 'global')
+        ->where('status !=', 9)
+        ->countAllResults() > 0;
+
+    if ($hasUnreadNormal) {
+        $this->notificationModel
+            ->where('user_id', $userId)
+            ->where('status', 1)
+            ->where('type !=', 'global')
+            ->where('status !=', 9)
+            ->set(['status' => 2])
+            ->update();
+
+        $markAsRead = true;
+        $message = 'All notifications marked as read.';
     } else {
-        $users = $this->UserModel->where('subscription', strtolower($target))->findAll();
+        $this->notificationModel
+            ->where('user_id', $userId)
+            ->where('status', 2)
+            ->where('type !=', 'global')
+            ->where('status !=', 9)
+            ->set(['status' => 1])
+            ->update();
+
+        $markAsRead = false;
+        $message = 'All notifications marked as unread.';
     }
 
-    $userIds = array_column($users, 'user_id');
+    $db = \Config\Database::connect();
+    $globalTable = $db->table('global_notification');
 
+    $globalPremiumNotifications = $this->notificationModel
+        ->where('type', 'global')
+        ->where('target', 'premium')
+        ->findAll();
+    foreach ($globalPremiumNotifications as $notification) {
+        $entry = $globalTable
+            ->where('notification_id', $notification['notification_id'])
+            ->where('user_id', $userId)
+            ->get()
+            ->getRowArray();
+
+        if ($entry) {
+            $newStatus = $markAsRead ? 2 : 1;
+            $globalTable
+                ->where('notification_id', $notification['notification_id'])
+                ->where('user_id', $userId)
+                ->update(['status' => $newStatus]);
+        } else {
+            $globalTable->insert([
+                'notification_id' => $notification['notification_id'],
+                'user_id' => $userId,
+                'status' => $markAsRead ? 2 : 1,
+                'title' => $notification['title'],
+                'content' => $notification['content'],
+                'created_by' => $userId,
+                'created_on' => date('Y-m-d H:i:s'),
+                'modify_by' => $userId,
+                'modify_on' => date('Y-m-d H:i:s'),
+            ]);
+        }
+    }
+    return $this->respond([
+        'success' => true,
+        'message' => $message,
+    ]);
 }
-
 }

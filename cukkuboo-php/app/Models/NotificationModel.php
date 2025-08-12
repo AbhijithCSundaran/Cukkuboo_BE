@@ -89,16 +89,17 @@ class NotificationModel extends Model
                     ->orderBy('created_on', 'DESC')
                     ->findAll();
     }
-
-
-
-    public function softDelete($notificationId, $userId)
+    public function softDelete($id, $userId)
     {
-        return $this->where('notification_id', $notificationId)
-                    ->where('user_id', $userId)
-                    ->set(['status' => 9])
-                    ->update();
+        $data = [
+            'status' => 9,
+            'modify_by' => $userId,
+            'modify_on' => date('Y-m-d H:i:s'),
+        ];
+
+        return $this->update($id, $data);
     }
+
 
     public function markAllAsRead($userId)
 {
@@ -131,6 +132,36 @@ public function assignToUserNotificationTable($userId, $notificationId) {
         'created_at' => date('Y-m-d H:i:s')
     ]);
 }
+public function getUserNotificationsFiltered($limit, $offset, $search = null, $user = null)
+{
+    $builder = $this->db->table($this->table);
+    $builder->select('notification.*, user.username');
+    $builder->join('user', 'user.user_id = notification.created_by', 'left');
+    $builder->where('notification.status !=', 9);
+    $now = date('Y-m-d H:i:s');
+    $builder->where("
+        (notification.type != 'global' AND notification.target != 'premium')OR
+        (notification.type = 'global' AND notification.target = 'premium' 
+        AND notification.is_scheduled = 1 AND notification.scheduled_time <= '{$now}')
+    ");
 
+    if (!empty($search)) {
+        $builder->groupStart()
+            ->like('notification.title', $search)
+            ->orLike('notification.content', $search)
+            ->orLike('user.username', $search)
+        ->groupEnd();
+    }
 
+    $total = $builder->countAllResults(false);
+    $notifications = $builder->orderBy('notification.created_on', 'DESC')
+        ->limit($limit, $offset)
+        ->get()
+        ->getResultArray();
+
+    return [
+        'notifications' => $notifications,
+        'total'         => $total
+    ];
+}
 }

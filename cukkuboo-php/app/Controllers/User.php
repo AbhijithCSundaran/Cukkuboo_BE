@@ -194,6 +194,9 @@ class User extends ResourceController
     $existingUser = $this->UserModel->find($user_id);
 
     if ($existingUser) {
+        if ($existingUser['status'] != 1) {
+        return $this->failUnauthorized('Token expired. You have been logged out.');
+    }
         $updateData = $userData; 
 
         if ($existingUser['auth_type'] === 'google') {
@@ -303,11 +306,14 @@ class User extends ResourceController
 public function getUserDetailsById($userId = null)
 {
     // $authHeader = $this->request->getHeaderLine('Authorization');
-     $authHeader = AuthHelper::getAuthorizationToken($this->request);
+    $authHeader = AuthHelper::getAuthorizationToken($this->request);
     $authuser = $this->authService->getAuthenticatedUser($authHeader);
 
     if (!$authuser) {
         return $this->failUnauthorized('Invalid or missing token.');
+    }
+    if ($authuser['status'] != 1) {
+        return $this->failUnauthorized('Token expired. You have been logged out.');
     }
 
     if ($userId === null) {
@@ -403,10 +409,14 @@ public function getUserList()
     $search    = $this->request->getGet('search');
    
     // $authHeader = $this->request->getHeaderLine('Authorization');
-     $authHeader = AuthHelper::getAuthorizationToken($this->request);
+    $authHeader = AuthHelper::getAuthorizationToken($this->request);
     $authuser = $this->authService->getAuthenticatedUser($authHeader);
-        if(!$authuser) 
-            return $this->failUnauthorized('Invalid or missing token.');
+    if(!$authuser){ 
+        return $this->failUnauthorized('Invalid or missing token.');
+    }
+    if ($authuser['status'] != 1) {
+        return $this->failUnauthorized('Token expired. You have been logged out.');
+    }
     $userQuery = $this->UserModel->where('status !=', 9)
                                  ->where('user_type', 'customer');
 
@@ -458,10 +468,14 @@ public function getStaffList()
     $search    = $this->request->getGet('search');
    
     // $authHeader = $this->request->getHeaderLine('Authorization');
-     $authHeader = AuthHelper::getAuthorizationToken($this->request);
+    $authHeader = AuthHelper::getAuthorizationToken($this->request);
     $authuser = $this->authService->getAuthenticatedUser($authHeader);
-        if(!$authuser) 
-            return $this->failUnauthorized('Invalid or missing token.');
+    if(!$authuser){ 
+        return $this->failUnauthorized('Invalid or missing token.');
+    }
+    if ($authuser['status'] != 1) {
+        return $this->failUnauthorized('Token expired. You have been logged out.');
+    }
     $userQuery = $this->UserModel->where('status !=', 9)
                                  ->where('user_type !=', 'customer');
 
