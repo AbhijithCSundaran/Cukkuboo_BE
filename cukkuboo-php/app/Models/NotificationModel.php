@@ -55,33 +55,83 @@ class NotificationModel extends Model
             'total'         => $total
         ];
     }
-    public function getUserNotificationsbyToken($userId, $pageIndex = 0, $pageSize = 10, $search = '')
+    public function getUserNotificationsByToken($userId, $pageIndex = 0, $pageSize = 10, $search = '', $now = null, $isPremium = false)
 {
     $offset = $pageIndex * $pageSize;
-
-    $builder = $this->where('user_id', $userId)
-                    ->where('status !=', 9);
+    $now = $now ?? date('Y-m-d H:i:s');
+    $individualBuilder = $this->select('n.*, su.status')
+                              ->from('notification n')
+                              ->join('status_update su', 'su.notification_id = n.notification_id AND su.user_id = ' . (int)$userId, 'left')
+                              ->where('n.user_id', $userId)
+                              ->where('n.status !=', 9)
+                              ->where('n.type', 'individual');
 
     if (!empty($search)) {
-        $builder->groupStart()
-                ->like('title', $search)
-                ->orLike('content', $search)
-                ->groupEnd();
+        $individualBuilder->groupStart()
+                          ->like('n.title', $search)
+                          ->orLike('n.content', $search)
+                          ->groupEnd();
     }
 
-    $total = $builder->countAllResults(false);
+    $individualData = $individualBuilder->orderBy('n.created_on', 'DESC')
+                                        ->get()->getResultArray();
+    $globalBuilder = $this->select('n.*, su.status')
+                          ->from('notification n')
+                          ->join('status_update su', 'su.notification_id = n.notification_id AND su.user_id = ' . (int)$userId, 'left')
+                          ->where('n.type', 'global')
+                          ->where('n.status !=', 9);
 
-    $data = $builder->orderBy('created_on', 'DESC')
-                    ->limit($pageSize, $offset)
-                    ->findAll();
+    if (!empty($search)) {
+        $globalBuilder->groupStart()
+                      ->like('n.title', $search)
+                      ->orLike('n.content', $search)
+                      ->groupEnd();
+    }
 
+    if ($isPremium) {
+        $globalBuilder->groupStart()
+            ->where('n.target !=', 'premium')
+            ->orGroupStart()
+                ->where('n.target', 'premium')
+                ->groupStart()
+                    ->where('n.is_scheduled', 0)
+                    ->orGroupStart()
+                        ->where('n.is_scheduled', 1)
+                        ->where('n.scheduled_time <=', $now)
+                    ->groupEnd()
+                ->groupEnd()
+            ->groupEnd()
+        ->groupEnd();
+    } else {
+        $globalBuilder->where('n.target !=', 'premium')
+                      ->groupStart()
+                        ->where('n.is_scheduled', 0)
+                        ->orGroupStart()
+                            ->where('n.is_scheduled', 1)
+                            ->where('n.scheduled_time <=', $now)
+                        ->groupEnd()
+                      ->groupEnd();
+    }
+
+    $globalData = $globalBuilder->orderBy('n.created_on', 'DESC')
+                                ->get()->getResultArray();
+    $allData = [];
+    $seenIds = [];
+
+    foreach (array_merge($individualData, $globalData) as $notif) {
+        if (!in_array($notif['notification_id'], $seenIds)) {
+            $seenIds[] = $notif['notification_id'];
+            $notif['read_status'] = $notif['read_status'] ?? 0;
+            $allData[] = $notif;
+        }
+    }
+    usort($allData, fn($a, $b) => strtotime($b['created_on']) - strtotime($a['created_on']));
+    $pagedData = array_slice($allData, $offset, $pageSize);
     return [
-        'total' => $total,
-        'data' => $data
+        'total' => count($allData),
+        'data'  => $pagedData
     ];
 }
-
-    
    public function getByUserId($userId)
     {
         return $this->where('user_id', $userId)
@@ -89,17 +139,16 @@ class NotificationModel extends Model
                     ->orderBy('created_on', 'DESC')
                     ->findAll();
     }
-    public function softDelete($id, $userId)
-    {
-        $data = [
-            'status' => 9,
-            'modify_by' => $userId,
-            'modify_on' => date('Y-m-d H:i:s'),
-        ];
-
-        return $this->update($id, $data);
-    }
-
+    public function softDelete($notificationId, $userId)
+{
+    return $this->where('notification_id', $notificationId)
+                ->set([
+                    'status'     => 9,
+                    'modify_by'  => $userId,
+                    'modify_on'  => date('Y-m-d H:i:s')
+                ])
+                ->update();
+}
 
     public function markAllAsRead($userId)
 {
@@ -122,46 +171,13 @@ public function create($data) {
     $this->db->insert('notification', $data);
     return $this->db->insert_id();
 }
-
-public function assignToUserNotificationTable($userId, $notificationId) {
-    $this->db->insert('user_notifications', [
-        'user_id' => $userId,
-        'notification_id' => $notificationId,
-        'is_read' => 0,
-        'is_deleted' => 0,
-        'created_at' => date('Y-m-d H:i:s')
-    ]);
-}
-public function getUserNotificationsFiltered($limit, $offset, $search = null, $user = null)
-{
-    $builder = $this->db->table($this->table);
-    $builder->select('notification.*, user.username');
-    $builder->join('user', 'user.user_id = notification.created_by', 'left');
-    $builder->where('notification.status !=', 9);
-    $now = date('Y-m-d H:i:s');
-    $builder->where("
-        (notification.type != 'global' AND notification.target != 'premium')OR
-        (notification.type = 'global' AND notification.target = 'premium' 
-        AND notification.is_scheduled = 1 AND notification.scheduled_time <= '{$now}')
-    ");
-
-    if (!empty($search)) {
-        $builder->groupStart()
-            ->like('notification.title', $search)
-            ->orLike('notification.content', $search)
-            ->orLike('user.username', $search)
-        ->groupEnd();
-    }
-
-    $total = $builder->countAllResults(false);
-    $notifications = $builder->orderBy('notification.created_on', 'DESC')
-        ->limit($limit, $offset)
-        ->get()
-        ->getResultArray();
-
-    return [
-        'notifications' => $notifications,
-        'total'         => $total
-    ];
-}
+// public function assignToUserNotificationTable($userId, $notificationId) {
+//     $this->db->insert('user_notifications', [
+//         'user_id' => $userId,
+//         'notification_id' => $notificationId,
+//         'is_read' => 0,
+//         'is_deleted' => 0,
+//         'created_at' => date('Y-m-d H:i:s')
+//     ]);
+// }
 }
