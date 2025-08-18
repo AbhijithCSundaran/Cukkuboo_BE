@@ -16,6 +16,7 @@ class Notification extends ResourceController
     {
         $this->session = \Config\Services::session();
         $this->input = \Config\Services::request();
+        $this->db = \Config\Database::connect();
         $this->notificationModel = new NotificationModel();
         $this->UserModel = new UserModel();
         $this->authService = new AuthService();
@@ -111,11 +112,10 @@ class Notification extends ResourceController
     ]);
 }
 
-
     public function delete($notification_id = null)
     {
     // $authHeader = $this->request->getHeaderLine('Authorization');
-     $authHeader = AuthHelper::getAuthorizationToken($this->request);
+    $authHeader = AuthHelper::getAuthorizationToken($this->request);
     $user = $this->authService->getAuthenticatedUser($authHeader);
 
     if (!$user) {
@@ -138,76 +138,69 @@ class Notification extends ResourceController
     }
     }
 
+//    public function markAllAsReadOrUnread()
+// {
+//     // $authHeader = $this->request->getHeaderLine('Authorization');
+//     $authHeader = AuthHelper::getAuthorizationToken($this->request);
+//     $user = $this->authService->getAuthenticatedUser($authHeader);
 
-   public function markAllAsReadOrUnread()
+//     if (!$user) {
+//         return $this->failUnauthorized('Invalid or missing token.');
+//     }
+//     if ($user['status'] != 1) {
+//         return $this->failUnauthorized('Token expired. You have been logged out.');
+//     }
+
+//     $userId = $user['user_id'];
+
+//     // Check if any unread notifications (status=1)
+//     $unreadCount = $this->notificationModel
+//         ->where('user_id', $userId)
+//         ->where('status', 1)
+//         ->countAllResults();
+
+//     if ($unreadCount > 0) {
+//         // Mark unread as read (1 -> 2)
+//         $this->notificationModel
+//             ->where('user_id', $userId)
+//             ->where('status', 1)
+//             ->set(['status' => 2])
+//             ->update();
+
+//         return $this->respond([
+//             'success' => true,
+//             'message' => 'All unread notifications marked as read.'
+//         ]);
+//     }
+
+//     // Otherwise, check if any read notifications (status=2)
+//     $readCount = $this->notificationModel
+//         ->where('user_id', $userId)
+//         ->where('status', 2)
+//         ->countAllResults();
+
+//     if ($readCount > 0) {
+//         // Mark read as unread (2 -> 1)
+//         $this->notificationModel
+//             ->where('user_id', $userId)
+//             ->where('status', 2)
+//             ->set(['status' => 1])
+//             ->update();
+
+//         return $this->respond([
+//             'success' => true,
+//             'message' => 'All read notifications marked as unread.',
+//         ]);
+//     }
+//     return $this->respond([
+//         'success' => true,
+//         'message' => 'No notifications to update.',
+//     ]);
+// }
+   public function getUserNotifications($userId = null)
 {
-    // $authHeader = $this->request->getHeaderLine('Authorization');
     $authHeader = AuthHelper::getAuthorizationToken($this->request);
-    $user = $this->authService->getAuthenticatedUser($authHeader);
-
-    if (!$user) {
-        return $this->failUnauthorized('Invalid or missing token.');
-    }
-    if ($user['status'] != 1) {
-        return $this->failUnauthorized('Token expired. You have been logged out.');
-    }
-
-    $userId = $user['user_id'];
-
-    // Check if any unread notifications (status=1)
-    $unreadCount = $this->notificationModel
-        ->where('user_id', $userId)
-        ->where('status', 1)
-        ->countAllResults();
-
-    if ($unreadCount > 0) {
-        // Mark unread as read (1 -> 2)
-        $this->notificationModel
-            ->where('user_id', $userId)
-            ->where('status', 1)
-            ->set(['status' => 2])
-            ->update();
-
-        return $this->respond([
-            'success' => true,
-            'message' => 'All unread notifications marked as read.'
-        ]);
-    }
-
-    // Otherwise, check if any read notifications (status=2)
-    $readCount = $this->notificationModel
-        ->where('user_id', $userId)
-        ->where('status', 2)
-        ->countAllResults();
-
-    if ($readCount > 0) {
-        // Mark read as unread (2 -> 1)
-        $this->notificationModel
-            ->where('user_id', $userId)
-            ->where('status', 2)
-            ->set(['status' => 1])
-            ->update();
-
-        return $this->respond([
-            'success' => true,
-            'message' => 'All read notifications marked as unread.',
-        ]);
-    }
-
-    // No unread or read notifications found
-    return $this->respond([
-        'success' => true,
-        'message' => 'No notifications to update.',
-    ]);
-}
-
-
-    public function getUserNotifications($userId = null)
-{
-    // $authHeader = $this->request->getHeaderLine('Authorization');
-    // $authUser = $this->authService->getAuthenticatedUser($authHeader);
-    $authHeader = AuthHelper::getAuthorizationToken($this->request);
-    $authUser = $this->authService->getAuthenticatedUser($authHeader);
+    $authUser   = $this->authService->getAuthenticatedUser($authHeader);
 
     if (!$authUser) {
         return $this->failUnauthorized('Invalid or missing token.');
@@ -215,27 +208,25 @@ class Notification extends ResourceController
     if ($authUser['status'] != 1) {
         return $this->failUnauthorized('Token expired. You have been logged out.');
     }
-
     if ($userId === null) {
         $userId = $authUser['user_id'];
     }
 
-    if (!$userId) {
-        return $this->failValidationErrors('User ID is required.');
-    }
-
-    $pageIndex = (int) $this->request->getGet('pageIndex') ?? 0;
-    $pageSize  = (int) $this->request->getGet('pageSize') ?? 10;
+    $pageIndex = (int) ($this->request->getGet('pageIndex') ?? 0);
+    $pageSize  = (int) ($this->request->getGet('pageSize') ?? 10);
     $search    = trim($this->request->getGet('search') ?? '');
-    $result = $this->notificationModel->getUserNotificationsbyToken($userId, $pageIndex, $pageSize, $search);
+    $isPremium = strtolower($authUser['subscription']) === 'premium';
+
+    $result = $this->notificationModel->getUserNotificationsByToken($userId, $pageIndex, $pageSize, $search, null, $isPremium);
 
     return $this->respond([
         'success' => true,
         'message' => 'Notifications fetched successfully.',
-        'total' => $result['total'],
-        'data' => $result['data']
+        'total'   => $result['total'],
+        'data'    => $result['data']
     ]);
 }
+
 public function getNotificationById($notificationId = null)
 {
     // $authHeader = $this->request->getHeaderLine('Authorization');
@@ -265,33 +256,90 @@ public function getNotificationById($notificationId = null)
         'data' => $notification
     ]);
 }
-
-public function sendDueNotifications()
+   public function markAllAsReadOrUnread()
 {
-    $dueNotifications = $this->notificationModel->where('is_scheduled', true)
-                                                ->where('scheduled_time <=', date('Y-m-d H:i:s'))
-                                                ->where('sent', 0)
-                                                ->findAll();
+    $authHeader = AuthHelper::getAuthorizationToken($this->request);
+    $user = $this->authService->getAuthenticatedUser($authHeader);
 
-    foreach ($dueNotifications as $notification) {
-        $this->sendNotificationToTargetUsers($notification);
-        $this->notificationModel->update($notification['id'], ['sent' => 1]);
+    if (!$user) {
+        return $this->failUnauthorized('Invalid or missing token.');
     }
 
-    return $this->respond(['message' => 'Scheduled notifications sent.']);
-}
-
-protected function sendNotificationToTargetUsers($notification)
-{
-    $target = $notification['target'];
-    if ($target === 'all') {
-        $users = $this->UserModel->findAll();
-    } else {
-        $users = $this->UserModel->where('subscription', strtolower($target))->findAll();
+    if ($user['status'] != 1) {
+        return $this->failUnauthorized('Token expired. You have been logged out.');
     }
 
-    $userIds = array_column($users, 'user_id');
+    $userId = $user['user_id'];
+    $now    = date('Y-m-d H:i:s');
 
+    $db = \Config\Database::connect();
+    $statusUpdateTable = $db->table('status_update');
+    $hasUnreadNormal = $this->notificationModel
+        ->where('user_id', $userId)
+        ->where('status', 1)
+        ->where('type !=', 'global')
+        ->countAllResults() > 0;
+    $hasUnreadGlobal = $statusUpdateTable
+        ->select('su.*')
+        ->from('status_update su')
+        ->join('notification n', 'n.notification_id = su.notification_id', 'inner')
+        ->where('su.user_id', $userId)
+        ->where('su.status', 1)
+        ->where('n.status !=', 9)
+        ->where('(n.is_scheduled = 0 OR (n.is_scheduled = 1 AND n.scheduled_time <= "'.$now.'"))')
+        ->countAllResults() > 0;
+
+    $targetStatusNormal = ($hasUnreadNormal || $hasUnreadGlobal) ? 2 : 1;
+    $this->notificationModel
+        ->where('user_id', $userId)
+        ->where('type !=', 'global')
+        ->where('status !=', 9)
+        ->set(['status' => $targetStatusNormal])
+        ->update();
+    $globalNotifications = $this->notificationModel
+        ->where('type', 'global')
+        ->where('status !=', 9)
+        ->where('(is_scheduled = 0 OR (is_scheduled = 1 AND scheduled_time <= "'.$now.'"))')
+        ->findAll();
+
+    foreach ($globalNotifications as $notification) {
+        $entry = $statusUpdateTable
+            ->where('notification_id', $notification['notification_id'])
+            ->where('user_id', $userId)
+            ->get()
+            ->getRowArray();
+
+        if ($entry) {
+            $statusUpdateTable
+                ->where('notification_id', $notification['notification_id'])
+                ->where('user_id', $userId)
+                ->update([
+                    'status'    => $targetStatusNormal,
+                    'modify_on' => $now,
+                    'modify_by' => $userId,
+                ]);
+        } else {
+            $statusUpdateTable->insert([
+                'notification_id' => $notification['notification_id'],
+                'user_id'         => $userId,
+                'status'          => $targetStatusNormal,
+                'title'           => $notification['title'],
+                'content'         => $notification['content'],
+                'created_by'      => $userId,
+                'created_on'      => $now,
+                'modify_by'       => $userId,
+                'modify_on'       => $now,
+            ]);
+        }
+    }
+
+    $message = ($targetStatusNormal == 2) 
+        ? 'All notifications marked as read.' 
+        : 'All notifications marked as unread.';
+
+    return $this->respond([
+        'success' => true,
+        'message' => $message,
+    ]);
 }
-
 }

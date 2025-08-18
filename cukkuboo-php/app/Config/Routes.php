@@ -118,6 +118,7 @@ $routes->delete('notification/delete/(:num)', 'Notification::delete/$1');
 $routes->post('notification/markall', 'Notification::markAllAsReadOrUnread'); 
 $routes->get('notification/get/(:num)', 'Notification::getNotificationById/$1');
 $routes->get('notification/get', 'Notification::getUserNotifications');
+// $routes->post('notification/mark', 'Notification::markAllAsReadUnread'); 
 
 // Watched history
 
@@ -163,7 +164,5 @@ $routes->delete('policy/delete/(:num)', 'Policy::deletePolicy/$1');
 //RevenueCat 
 $routes->get('subscription/(:any)', 'RevenueCat::getSubscription/$1');
 $routes->post('stripe/payment', 'StripePayment::createCheckoutSession');
-
-
 
 ?>
