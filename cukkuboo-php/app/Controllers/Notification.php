@@ -50,6 +50,7 @@ class Notification extends ResourceController
     'target'        => in_array($data['target'] ?? '', ['all', 'premium', 'free']) ? $data['target'] : 'all',
     'is_scheduled'  => !empty($data['is_scheduled']) ? true : false,
     'scheduled_time'=> !empty($data['scheduled_time']) ? $data['scheduled_time'] : null,
+    'image'         => $data['image'] ?? null,
     'status'        => 1,
 ];
     if ($notificationId) {

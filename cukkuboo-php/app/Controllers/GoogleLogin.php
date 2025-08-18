@@ -116,9 +116,7 @@ class GoogleLogin extends BaseController
             'last_login' => $now,
             'updated_at' => $now
         ];
-        // if (!empty($data['username'])) $updateData['username'] = $data['username'];
-        // if (!empty($data['phone']))    $updateData['phone'] = $data['phone'];
-        // if (!empty($data['country']))  $updateData['country'] = $data['country'];
+
         if (!empty($fcmToken))$updateData['fcm_token'] = $fcmToken; 
         $this->loginModel->update($activeUser['user_id'], $updateData);
         if (isset($activeUser['auth_type']) && $activeUser['auth_type'] === 'google') {
@@ -250,11 +248,23 @@ class GoogleLogin extends BaseController
         'end_date' => null,
         'subscription' => 0
     ];
-
-    $unreadCount = $this->notificationModel
-        ->where('user_id', $user['user_id'])
-        ->where('status', 1)
-        ->countAllResults();
+    $notificationModel = new NotificationModel();
+    $now = date('Y-m-d H:i:s');
+    $notificationModel->where('status', 1);
+    $notificationModel->groupStart();
+        $notificationModel->groupStart()
+            ->where('user_id', $user['user_id'])
+        ->groupEnd();
+        if (strtolower($user['subscription']) === 'premium') {
+            $notificationModel->orGroupStart()
+                ->where('type', 'global')
+                ->where('target', 'premium')
+                ->where('is_scheduled', 1)
+                ->where('scheduled_time <=', $now)
+            ->groupEnd();
+        }
+    $notificationModel->groupEnd();
+    $unreadCount = $notificationModel->countAllResults();
 
     return $this->response->setJSON([
         'success' => true,

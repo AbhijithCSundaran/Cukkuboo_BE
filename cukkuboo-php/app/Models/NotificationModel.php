@@ -19,6 +19,7 @@ class NotificationModel extends Model
         'type',         
         'target', 
         'status',
+        'image',
         'is_scheduled',
         'scheduled_time',
         'created_by',
