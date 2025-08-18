@@ -44,18 +44,6 @@ class Login extends BaseController
     ->first();
 
     if (!$user) {
-    //     $googleUser = $this->loginModel
-    //     ->where('email', $data['email'])
-    //     ->where('auth_type', 'google')
-    //     ->first();
-
-    // if ($googleUser) {
-    //     return $this->response->setStatusCode(200)->setJSON([
-    //         'success' => false,
-    //         'message' => 'Login failed. This account is linked with Google. Please sign in using Google.',
-    //         'data' => []
-    //     ]);
-    // }
         $suspendedUser = $this->loginModel
             ->where('email', $data['email'])
             ->where('status', 2)
@@ -161,12 +149,24 @@ class Login extends BaseController
             'subscription' => 0
         ];
     }
-    $unreadCount = $notificationModel
-    ->where('user_id', $user['user_id'])
-    ->where('status', 1)
-    ->countAllResults();
+    $now = date('Y-m-d H:i:s');
+    $notificationModel->where('status', 1);
+    $notificationModel->groupStart();
+        $notificationModel->groupStart()
+            ->where('user_id', $user['user_id'])
+        ->groupEnd();
+        if (strtolower($user['subscription']) === 'premium') {
+            $notificationModel->orGroupStart()
+                ->where('type', 'global')
+                ->where('target', 'premium')
+                ->where('is_scheduled', 1)
+                ->where('scheduled_time <=', $now)
+            ->groupEnd();
+        }
+    $notificationModel->groupEnd();
+    $unreadCount = $notificationModel->countAllResults();
 
-    // Login Type 1: No fcm_token → just return existing token, no update
+    // Login Type 1: No fcm_token→ just return existing token, no update
     if (empty($data['fcm_token'])) {
     $this->loginModel->update($user['user_id'], $updateData);
     
