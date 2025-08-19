@@ -122,7 +122,6 @@ class NotificationModel extends Model
     foreach (array_merge($individualData, $globalData) as $notif) {
         if (!in_array($notif['notification_id'], $seenIds)) {
             $seenIds[] = $notif['notification_id'];
-            $notif['read_status'] = $notif['read_status'] ?? 0;
             $allData[] = $notif;
         }
     }
