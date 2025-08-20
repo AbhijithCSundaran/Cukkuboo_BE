@@ -343,4 +343,38 @@ public function getNotificationById($notificationId = null)
         'message' => $message,
     ]);
 }
+public function getAllGlobalNotifications()
+{
+    $authHeader = AuthHelper::getAuthorizationToken($this->request);
+    $user = $this->authService->getAuthenticatedUser($authHeader);
+
+    if (!$user) {
+        return $this->failUnauthorized('Invalid or missing token.');
+    }
+    if ($user['status'] != 1) {
+        return $this->failUnauthorized('Token expired. You have been logged out.');
+    }
+
+    $pageIndex = (int) $this->request->getGet('pageIndex');
+    $pageSize  = (int) $this->request->getGet('pageSize');
+    $search    = $this->request->getGet('search');
+
+    if ($pageSize <= 0) {
+        $pageSize = 10;
+    }
+
+    $offset = $pageIndex * $pageSize;
+    
+    $notificationModel = new notificationModel();
+    $data = $notificationModel->getGlobalNotifications($pageSize, $offset, $search);
+
+    return $this->respond([
+        'success' => true,
+        'message' => 'Global notifications fetched successfully.',
+        'data'    => $data['notifications'],
+        'total'   => $data['total']
+    ]);
+}
+
+
 }
