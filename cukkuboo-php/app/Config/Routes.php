@@ -75,7 +75,7 @@ $routes->get('movies/related/(:num)', 'MovieDetail::getRelatedMovies/$1');
 //Home Display
 
 $routes->get('movies/userDashboard', 'MovieDetail::getUserHomeData');
-$routes->get('api/home', 'MovieDetail::homeDisplay');
+// $routes->get('api/home', 'MovieDetail::homeDisplay');
 
 
 // Subscription Plan Routes 
@@ -118,7 +118,7 @@ $routes->delete('notification/delete/(:num)', 'Notification::delete/$1');
 $routes->post('notification/markall', 'Notification::markAllAsReadOrUnread'); 
 $routes->get('notification/get/(:num)', 'Notification::getNotificationById/$1');
 $routes->get('notification/get', 'Notification::getUserNotifications');
-// $routes->post('notification/mark', 'Notification::markAllAsReadUnread'); 
+$routes->get('notification/global', 'Notification::getAllGlobalNotifications'); 
 
 // Watched history
 

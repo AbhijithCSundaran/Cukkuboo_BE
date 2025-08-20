@@ -247,42 +247,6 @@ class Login extends BaseController
     ]);
 }
 
-
-public function resetPassword()
-{
-    $data = $this->request->getJSON(true);
-
-    if (empty($data['email']) || empty($data['otp']) || empty($data['new_password'])) {
-        return $this->response->setJSON([
-            'success' => false,
-            'message' => 'Email, OTP, and new password are required.',
-            'data' => []
-        ]);
-    }
-
-    $user = $this->loginModel->where('email', $data['email'])->first();
-
-    if (!$user || $user['password'] !== $data['otp']) {
-        return $this->response->setJSON([
-            'success' => false,
-            'message' => 'Invalid OTP or email.',
-            'data' => []
-        ]);
-    }
-
-    $hashedPassword = password_hash($data['new_password'], PASSWORD_DEFAULT);
-
-    // Only update if new password is different from current password (which is OTP right now)
-    if ($user['password'] !== $hashedPassword) {
-        $this->loginModel->update($user['user_id'], ['password' => $hashedPassword]);
-    }
-
-    return $this->response->setJSON([
-        'success' => true,
-        'message' => 'Password reset successful.',
-        
-    ]);
-}
 public function refreshFcmToken()
 {
     $authHeader = AuthHelper::getAuthorizationToken($this->request);
