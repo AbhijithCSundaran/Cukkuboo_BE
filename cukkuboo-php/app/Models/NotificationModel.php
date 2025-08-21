@@ -188,8 +188,10 @@ public function getGlobalNotifications($limit, $offset, $search = null)
     $builder->where('notification.status !=', 9);
     $builder->where('notification.type', 'global');
     if (!empty($search)) {
-        $builder->like('notification.title', $search)
-                ->orLike('notification.content', $search);
+        $builder->groupStart()
+                ->like('notification.title', $search)
+                ->orLike('notification.content', $search)
+                ->groupEnd();
     }
     $total = $builder->countAllResults(false);
     $notifications = $builder->orderBy('notification.created_on', 'DESC')

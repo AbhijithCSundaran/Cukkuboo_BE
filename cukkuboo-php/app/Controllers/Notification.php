@@ -364,7 +364,6 @@ public function getAllGlobalNotifications()
     }
 
     $offset = $pageIndex * $pageSize;
-    
     $notificationModel = new notificationModel();
     $data = $notificationModel->getGlobalNotifications($pageSize, $offset, $search);
 
