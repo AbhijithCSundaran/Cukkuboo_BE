@@ -60,12 +60,11 @@ class NotificationModel extends Model
 {
     $offset = $pageIndex * $pageSize;
     $now = $now ?? date('Y-m-d H:i:s');
-    $individualBuilder = $this->select('n.*, su.status')
-                              ->from('notification n')
-                              ->join('status_update su', 'su.notification_id = n.notification_id AND su.user_id = ' . (int)$userId, 'left')
-                              ->where('n.user_id', $userId)
-                              ->where('n.status !=', 9)
-                              ->where('n.type', 'individual');
+    $individualBuilder = $this->select('n.*')
+                        ->from('notification n')
+                        ->where('n.user_id', $userId)   
+                        ->where('n.status !=', 9)
+                        ->where('n.type', 'individual');
 
     if (!empty($search)) {
         $individualBuilder->groupStart()
