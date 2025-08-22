@@ -98,7 +98,7 @@ class NotificationModel extends Model
                     ->where('n.is_scheduled', 0)
                     ->orGroupStart()
                         ->where('n.is_scheduled', 1)
-                        ->where('n.scheduled_time <=', $now)
+                        ->where('n.scheduled_time <= NOW()', null, false)
                     ->groupEnd()
                 ->groupEnd()
             ->groupEnd()
@@ -109,7 +109,7 @@ class NotificationModel extends Model
                         ->where('n.is_scheduled', 0)
                         ->orGroupStart()
                             ->where('n.is_scheduled', 1)
-                            ->where('n.scheduled_time <=', $now)
+                            ->where('n.scheduled_time <= NOW()', null, false)
                         ->groupEnd()
                       ->groupEnd();
     }
