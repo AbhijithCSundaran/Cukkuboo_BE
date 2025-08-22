@@ -60,12 +60,11 @@ class NotificationModel extends Model
 {
     $offset = $pageIndex * $pageSize;
     $now = $now ?? date('Y-m-d H:i:s');
-    $individualBuilder = $this->select('n.*, su.status')
-                              ->from('notification n')
-                              ->join('status_update su', 'su.notification_id = n.notification_id AND su.user_id = ' . (int)$userId, 'left')
-                              ->where('n.user_id', $userId)
-                              ->where('n.status !=', 9)
-                              ->where('n.type', 'individual');
+    $individualBuilder = $this->select('n.*')
+                        ->from('notification n')
+                        ->where('n.user_id', $userId)   
+                        ->where('n.status !=', 9)
+                        ->where('n.type', 'individual');
 
     if (!empty($search)) {
         $individualBuilder->groupStart()
@@ -98,7 +97,7 @@ class NotificationModel extends Model
                     ->where('n.is_scheduled', 0)
                     ->orGroupStart()
                         ->where('n.is_scheduled', 1)
-                        ->where('n.scheduled_time <=', $now)
+                        ->where('n.scheduled_time <= NOW()', null, false)
                     ->groupEnd()
                 ->groupEnd()
             ->groupEnd()
@@ -109,7 +108,7 @@ class NotificationModel extends Model
                         ->where('n.is_scheduled', 0)
                         ->orGroupStart()
                             ->where('n.is_scheduled', 1)
-                            ->where('n.scheduled_time <=', $now)
+                            ->where('n.scheduled_time <= NOW()', null, false)
                         ->groupEnd()
                       ->groupEnd();
     }
@@ -188,9 +187,10 @@ public function getGlobalNotifications($limit, $offset, $search = null)
     $builder->where('notification.status !=', 9);
     $builder->where('notification.type', 'global');
     if (!empty($search)) {
-        $builder->like('notification.title', $search)
+        $builder->groupStart()
+                ->like('notification.title', $search)
                 ->orLike('notification.content', $search)
-                ->orLike('user.username', $search);
+                ->groupEnd();
     }
     $total = $builder->countAllResults(false);
     $notifications = $builder->orderBy('notification.created_on', 'DESC')

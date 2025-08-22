@@ -270,16 +270,18 @@ public function getNotificationById($notificationId = null)
         return $this->failUnauthorized('Token expired. You have been logged out.');
     }
 
-    $userId = $user['user_id'];
-    $now    = date('Y-m-d H:i:s');
-
-    $db = \Config\Database::connect();
+    $userId     = $user['user_id'];
+    $isPremium  = strtolower($user['subscription']) === 'premium';
+    $now        = date('Y-m-d H:i:s');
+    $db         = \Config\Database::connect();
     $statusUpdateTable = $db->table('status_update');
+
     $hasUnreadNormal = $this->notificationModel
         ->where('user_id', $userId)
         ->where('status', 1)
         ->where('type !=', 'global')
         ->countAllResults() > 0;
+
     $hasUnreadGlobal = $statusUpdateTable
         ->select('su.*')
         ->from('status_update su')
@@ -297,12 +299,24 @@ public function getNotificationById($notificationId = null)
         ->where('status !=', 9)
         ->set(['status' => $targetStatusNormal])
         ->update();
-    $globalNotifications = $this->notificationModel
+    $globalQuery = $this->notificationModel
         ->where('type', 'global')
         ->where('status !=', 9)
-        ->where('(is_scheduled = 0 OR (is_scheduled = 1 AND scheduled_time <= "'.$now.'"))')
-        ->findAll();
+        ->where('(is_scheduled = 0 OR (is_scheduled = 1 AND scheduled_time <= "'.$now.'"))');
 
+    if ($isPremium) {
+        $globalQuery->groupStart()
+            ->where('target', 'all')
+            ->orWhere('target', 'premium')
+        ->groupEnd();
+    } else {
+        $globalQuery->groupStart()
+            ->where('target', 'all')
+            ->orWhere('target', 'free')
+        ->groupEnd();
+    }
+
+    $globalNotifications = $globalQuery->findAll();
     foreach ($globalNotifications as $notification) {
         $entry = $statusUpdateTable
             ->where('notification_id', $notification['notification_id'])
@@ -343,6 +357,7 @@ public function getNotificationById($notificationId = null)
         'message' => $message,
     ]);
 }
+
 public function getAllGlobalNotifications()
 {
     $authHeader = AuthHelper::getAuthorizationToken($this->request);
@@ -364,7 +379,6 @@ public function getAllGlobalNotifications()
     }
 
     $offset = $pageIndex * $pageSize;
-    
     $notificationModel = new notificationModel();
     $data = $notificationModel->getGlobalNotifications($pageSize, $offset, $search);
 
